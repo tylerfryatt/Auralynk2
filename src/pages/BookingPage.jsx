@@ -14,23 +14,35 @@ const BookingPage = () => {
   const navigate = useNavigate();
 
   const fetchBookings = async () => {
-    const snapshot = await getDocs(collection(db, "bookings"));
-    const allBookings = snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
-    setBookings(allBookings);
+    try {
+      const snapshot = await getDocs(collection(db, "bookings"));
+      const allBookings = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setBookings(allBookings);
+    } catch (err) {
+      console.error("Failed to load bookings", err);
+    }
   };
 
   const updateStatus = async (bookingId, status) => {
-    const bookingRef = doc(db, "bookings", bookingId);
-    await updateDoc(bookingRef, { status });
-    fetchBookings();
+    try {
+      const bookingRef = doc(db, "bookings", bookingId);
+      await updateDoc(bookingRef, { status });
+      fetchBookings();
+    } catch (err) {
+      console.error("Failed to update booking", err);
+    }
   };
 
   const deleteBooking = async (bookingId) => {
-    await deleteDoc(doc(db, "bookings", bookingId));
-    fetchBookings();
+    try {
+      await deleteDoc(doc(db, "bookings", bookingId));
+      fetchBookings();
+    } catch (err) {
+      console.error("Failed to delete booking", err);
+    }
   };
 
   useEffect(() => {
