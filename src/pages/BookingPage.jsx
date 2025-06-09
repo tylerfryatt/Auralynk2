@@ -52,7 +52,16 @@ const BookingPage = () => {
   const updateStatus = async (bookingId, status) => {
     try {
       const bookingRef = doc(db, "bookings", bookingId);
-      await updateDoc(bookingRef, { status });
+      if (status === "accepted") {
+        const res = await fetch("http://localhost:4000/create-room", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+        });
+        const data = await res.json();
+        await updateDoc(bookingRef, { status, roomUrl: data.roomUrl });
+      } else {
+        await updateDoc(bookingRef, { status });
+      }
 
       if (status !== "pending") {
         // immediately remove from UI so it disappears without a page reload
