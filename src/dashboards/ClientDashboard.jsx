@@ -54,10 +54,17 @@ const ClientDashboard = () => {
       profileMap[d.id] = d.data();
     });
 
+    const now = new Date();
+
     const data = usersSnap.docs
       .map((doc) => ({ id: doc.id, ...doc.data() }))
       .filter((u) => u.role === "reader")
-      .map((u) => ({ ...u, ...profileMap[u.id] }));
+      .map((u) => {
+        const slots = Array.from(
+          new Set((u.availableSlots || []).filter((s) => new Date(s) > now))
+        );
+        return { ...u, availableSlots: slots, ...profileMap[u.id] };
+      });
 
     setReaders(data);
   };
@@ -167,7 +174,7 @@ const ClientDashboard = () => {
   const groupSlotsByDay = (slots, booked = []) => {
     const now = new Date();
     const bookedSet = new Set(booked);
-    return slots
+    return Array.from(new Set(slots))
       .filter((s) => new Date(s) > now && !bookedSet.has(s))
       .sort()
       .reduce((acc, iso) => {

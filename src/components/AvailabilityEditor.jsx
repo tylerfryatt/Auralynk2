@@ -28,14 +28,15 @@ const AvailabilityEditor = () => {
         if (snap.exists()) {
           const data = snap.data();
           const now = new Date();
-          const futureSlots = (data.availableSlots || []).filter(
-            (slot) => new Date(slot) > now
+          const cleaned = Array.from(
+            new Set((data.availableSlots || []).filter((s) => new Date(s) > now))
           );
-          setAvailability(futureSlots);
 
-          if (futureSlots.length !== (data.availableSlots || []).length) {
+          setAvailability(cleaned);
+
+          if (cleaned.length !== (data.availableSlots || []).length) {
             await updateDoc(docRef, {
-              availableSlots: futureSlots,
+              availableSlots: cleaned,
             });
           }
         }
@@ -53,7 +54,7 @@ const AvailabilityEditor = () => {
     await updateDoc(docRef, {
       availableSlots: arrayUnion(slotISO),
     });
-    setAvailability((prev) => [...prev, slotISO]);
+    setAvailability((prev) => Array.from(new Set([...prev, slotISO])));
     setSelected(null);
   };
 
@@ -85,7 +86,8 @@ const AvailabilityEditor = () => {
         />
         <button
           onClick={addSlot}
-          className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 text-sm"
+          disabled={!selected || availability.includes(selected.toISOString())}
+          className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 text-sm disabled:opacity-50"
         >
           Add
         </button>
