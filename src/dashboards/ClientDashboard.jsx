@@ -80,29 +80,23 @@ const ClientDashboard = () => {
 
   useEffect(() => {
     if (!user) return;
-    const q = query(
-      collection(db, "bookings"),
-      where("clientId", "==", user.uid)
-    );
+    const q = query(collection(db, "bookings"), where("clientId", "==", user.uid));
     const unsubscribe = onSnapshot(q, async (snap) => {
+      const accepted = snap.docs.filter((d) => d.data().status === "accepted");
       const mapped = await Promise.all(
-        snap.docs
-          .filter((d) => d.data().status === "accepted")
-          .map(async (d) => {
-            const data = { id: d.id, ...d.data() };
-            const readerDoc = await getDoc(doc(db, "profiles", data.readerId));
-            return {
-              ...data,
-              readerName: readerDoc.exists()
-                ? readerDoc.data().displayName
-                : data.readerId,
-            };
-          })
+        accepted.map(async (d) => {
+          const data = { id: d.id, ...d.data() };
+          const readerDoc = await getDoc(doc(db, "profiles", data.readerId));
+          return {
+            ...data,
+            readerName: readerDoc.exists() ? readerDoc.data().displayName : data.readerId,
+          };
+        })
       );
       const oneHourAgo = Date.now() - 60 * 60 * 1000;
-      const upcoming = mapped.filter(
-        (b) => b.selectedTime && new Date(b.selectedTime) > new Date(oneHourAgo)
-      );
+      const upcoming = mapped
+        .filter((b) => b.selectedTime && new Date(b.selectedTime) > new Date(oneHourAgo))
+        .sort((a, b) => new Date(a.selectedTime) - new Date(b.selectedTime));
       setBookings(upcoming);
     });
     return () => unsubscribe();
