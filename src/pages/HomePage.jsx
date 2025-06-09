@@ -14,7 +14,7 @@ const HomePage = () => {
           Reader Dashboard
         </Link>
       </div>
-      <Link to="/login" className="underline text-sm text-indigo-200">
+      <Link to="/login" className="underline text-sm text-indigo-700">
         🔐 Login
       </Link>
     </div>

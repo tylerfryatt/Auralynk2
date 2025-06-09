@@ -194,7 +194,7 @@ const ClientDashboard = () => {
           {readers.map((reader) => {
             const grouped = groupSlotsByDay(reader.availableSlots);
             return (
-              <li key={reader.id} className="border p-4 rounded shadow">
+              <li key={reader.id} className="reader-card">
                 <h3 className="text-md font-semibold">{reader.displayName}</h3>
                 <p className="text-sm text-gray-600">{reader.bio}</p>
                 <p className="text-sm italic text-gray-500 mt-1">
