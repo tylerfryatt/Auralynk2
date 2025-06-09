@@ -80,7 +80,7 @@ const ClientProfileForm = () => {
             </p>
             <button
               onClick={() => setEditingField(fieldKey)}
-              className="text-sm text-indigo-600 hover:underline"
+              className="text-sm text-blue-600 hover:underline"
             >
               ✏️ Edit
             </button>

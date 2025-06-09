@@ -115,7 +115,7 @@ const ReaderDashboard = () => {
         <div className="flex items-center gap-4">
           <a
             href="/book"
-            className="text-sm text-indigo-600 hover:underline"
+            className="text-sm text-blue-600 hover:underline"
           >
             📋 Manage Bookings
           </a>

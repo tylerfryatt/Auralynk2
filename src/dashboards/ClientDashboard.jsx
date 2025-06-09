@@ -210,7 +210,7 @@ const ClientDashboard = () => {
                           <button
                             key={slot}
                             onClick={() => handleBook(reader.id, slot)}
-                            className="bg-indigo-600 text-white text-xs px-3 py-1 rounded hover:bg-indigo-700 whitespace-nowrap flex-shrink-0"
+                            className="bg-blue-600 text-white text-xs px-3 py-1 rounded hover:bg-blue-700 whitespace-nowrap flex-shrink-0"
                           >
                             {formatTime(slot)}
                           </button>

@@ -171,7 +171,7 @@ const ClientDashboard = () => {
                           disabled={!selectedTimes[reader.id]}
                           className={`mt-4 px-4 py-2 rounded text-white ${
                             selectedTimes[reader.id]
-                              ? "bg-indigo-600 hover:bg-indigo-700"
+                              ? "bg-blue-600 hover:bg-blue-700"
                               : "bg-gray-400 cursor-not-allowed"
                           }`}
                         >

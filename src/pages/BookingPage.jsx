@@ -43,7 +43,7 @@ const BookingPage = () => {
         <h1 className="text-2xl font-bold">📋 All Bookings</h1>
         <button
           onClick={() => navigate("/reader")}
-          className="text-sm text-indigo-600 hover:underline"
+          className="text-sm text-blue-600 hover:underline"
         >
           ⬅ Back to Dashboard
         </button>

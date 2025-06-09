@@ -100,7 +100,7 @@ export default function AuthPage() {
         <button
           type="button"
           onClick={() => setIsNewUser(!isNewUser)}
-          className="text-sm underline text-indigo-600"
+          className="text-sm underline text-blue-600"
         >
           {isNewUser ? "Already have an account?" : "Need to create an account?"}
         </button>
