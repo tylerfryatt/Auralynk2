@@ -4,7 +4,7 @@ module.exports = {
     extend: {
       fontFamily: {
         sans: ["Inter", "sans-serif"],
-        display: ["Cinzel", "serif"],
+        display: ["Poppins", "sans-serif"],
       },
     },
   },

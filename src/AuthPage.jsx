@@ -63,7 +63,7 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="p-4 max-w-md mx-auto space-y-4">
+    <div className="p-4 max-w-md mx-auto space-y-4 text-gray-800">
       <h1 className="text-2xl font-display font-bold">
         {isNewUser ? "Sign Up" : "Log In"}
       </h1>
@@ -100,7 +100,7 @@ export default function AuthPage() {
         <button
           type="button"
           onClick={() => setIsNewUser(!isNewUser)}
-          className="text-sm underline text-indigo-200"
+          className="text-sm underline text-indigo-600"
         >
           {isNewUser ? "Already have an account?" : "Need to create an account?"}
         </button>
