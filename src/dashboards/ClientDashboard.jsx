@@ -34,7 +34,7 @@ const ClientDashboard = () => {
         return;
       }
       setUser(currentUser);
-      const profileRef = doc(db, "users", currentUser.uid);
+      const profileRef = doc(db, "profiles", currentUser.uid);
       const snap = await getDoc(profileRef);
       if (snap.exists()) setProfile(snap.data());
     });
@@ -44,15 +44,21 @@ const ClientDashboard = () => {
   }, []);
 
   const fetchReaders = async () => {
-    const snapshot = await getDocs(collection(db, "users"));
-    const data = snapshot.docs
+    const [usersSnap, profilesSnap] = await Promise.all([
+      getDocs(collection(db, "users")),
+      getDocs(collection(db, "profiles")),
+    ]);
+
+    const profileMap = {};
+    profilesSnap.docs.forEach((d) => {
+      profileMap[d.id] = d.data();
+    });
+
+    const data = usersSnap.docs
       .map((doc) => ({ id: doc.id, ...doc.data() }))
-      .filter(
-        (r) =>
-          r.role === "reader" &&
-          Array.isArray(r.availableSlots) &&
-          r.availableSlots.length > 0
-      );
+      .filter((u) => u.role === "reader")
+      .map((u) => ({ ...u, ...profileMap[u.id] }));
+
     setReaders(data);
   };
 
@@ -109,7 +115,7 @@ const ClientDashboard = () => {
 
   const saveProfile = async () => {
     if (!user) return;
-    const profileRef = doc(db, "users", user.uid);
+    const profileRef = doc(db, "profiles", user.uid);
     await setDoc(profileRef, profile, { merge: true });
     setEditing(false);
   };
@@ -248,7 +254,7 @@ const ClientDashboard = () => {
         <ul className="space-y-6">
           {readers.map((reader) => {
             const grouped = groupSlotsByDay(
-              reader.availableSlots,
+              reader.availableSlots || [],
               takenSlots[reader.id] || []
             );
             return (
@@ -260,22 +266,28 @@ const ClientDashboard = () => {
                 </p>
 
                 <div className="mt-4 slots-container flex flex-row flex-wrap gap-4">
-                  {Object.entries(grouped).map(([day, slots]) => (
-                    <div key={day} className="flex flex-col items-start mb-2">
-                      <div className="font-medium text-sm mb-1 text-gray-800">{day}</div>
-                      <div className="flex flex-row flex-wrap gap-2 items-start w-full">
-                        {slots.map((slot) => (
-                          <button
-                            key={slot}
-                            onClick={() => requestBook(reader, slot)}
-                            className="bg-blue-600 text-white text-xs px-3 py-1 rounded hover:bg-blue-700 whitespace-nowrap flex-shrink-0"
-                          >
-                            {formatTime(slot)}
-                          </button>
-                        ))}
+                  {Object.keys(grouped).length === 0 ? (
+                    <p className="text-sm text-gray-500 italic">
+                      This reader has no availability at this time.
+                    </p>
+                  ) : (
+                    Object.entries(grouped).map(([day, slots]) => (
+                      <div key={day} className="flex flex-col items-start mb-2">
+                        <div className="font-medium text-sm mb-1 text-gray-800">{day}</div>
+                        <div className="flex flex-row flex-wrap gap-2 items-start w-full">
+                          {slots.map((slot) => (
+                            <button
+                              key={slot}
+                              onClick={() => requestBook(reader, slot)}
+                              className="bg-blue-600 text-white text-xs px-3 py-1 rounded hover:bg-blue-700 whitespace-nowrap flex-shrink-0"
+                            >
+                              {formatTime(slot)}
+                            </button>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))
+                  )}
                 </div>
               </li>
             );

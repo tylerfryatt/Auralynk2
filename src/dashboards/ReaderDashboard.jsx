@@ -38,7 +38,7 @@ const ReaderDashboard = () => {
       setUser(currentUser);
 
       try {
-        const profileRef = doc(db, "users", currentUser.uid);
+        const profileRef = doc(db, "profiles", currentUser.uid);
         const snap = await getDoc(profileRef);
 
         if (snap.exists()) {
@@ -85,9 +85,12 @@ const ReaderDashboard = () => {
             })
           );
           const oneHourAgo = Date.now() - 60 * 60 * 1000;
-          const upcoming = mapped.filter(
-            (b) => b.selectedTime && new Date(b.selectedTime) > new Date(oneHourAgo)
-          );
+          const upcoming = mapped
+            .filter(
+              (b) =>
+                b.selectedTime && new Date(b.selectedTime) > new Date(oneHourAgo)
+            )
+            .sort((a, b) => new Date(a.selectedTime) - new Date(b.selectedTime));
           setBookings(upcoming);
         });
 
@@ -135,7 +138,7 @@ const ReaderDashboard = () => {
 
   const saveProfile = async () => {
     if (!user) return;
-    const profileRef = doc(db, "users", user.uid);
+    const profileRef = doc(db, "profiles", user.uid);
     await setDoc(profileRef, formData, { merge: true });
     setProfile(formData);
     setEditing(false);
