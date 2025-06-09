@@ -9,6 +9,7 @@ import {
   query,
   where,
   setDoc,
+  deleteDoc,
 } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 import AvailabilityEditor from "../components/AvailabilityEditor";
@@ -20,6 +21,7 @@ const ReaderDashboard = () => {
   const [bookings, setBookings] = useState([]);
   const [editing, setEditing] = useState(false);
   const [formData, setFormData] = useState({ displayName: "", bio: "" });
+  const [confirmId, setConfirmId] = useState(null);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -106,6 +108,15 @@ const ReaderDashboard = () => {
     await setDoc(profileRef, formData, { merge: true });
     setProfile(formData);
     setEditing(false);
+  };
+
+  const cancelBooking = async (bookingId) => {
+    await deleteDoc(doc(db, "bookings", bookingId));
+    setBookings((prev) => prev.filter((b) => b.id !== bookingId));
+  };
+
+  const requestCancel = (bookingId) => {
+    setConfirmId(bookingId);
   };
 
   return (
@@ -206,29 +217,58 @@ const ReaderDashboard = () => {
             if (!validDate || isNaN(validDate)) return null;
             const joinable = b.roomUrl && isSessionJoinable(b.selectedTime);
 
-            return (
-              <li key={i} className="border-b pb-2 text-sm">
-                <div>
-                  📅 {validDate.toLocaleString()} — Client ID: {b.clientId}
-                </div>
-
-                {joinable ? (
-                  <a
-                    href={`/session/${b.id}`}
-                    className="text-blue-500 hover:underline"
-                  >
-                    🔗 Join Video Session
-                  </a>
-                ) : (
-                  <div className="text-xs text-gray-500 italic">
-                    {b.roomUrl ? "Not time to join yet" : "No room link yet"}
+              return (
+                <li key={i} className="border-b pb-2 text-sm flex justify-between items-center">
+                  <span>
+                    📅 {validDate.toLocaleString()} — Client ID: {b.clientId}
+                  </span>
+                  <div className="flex items-center gap-3">
+                    {joinable ? (
+                      <a
+                        href={`/session/${b.id}`}
+                        className="text-blue-500 hover:underline text-sm"
+                      >
+                        🔗 Join Video Session
+                      </a>
+                    ) : (
+                      <div className="text-xs text-gray-500 italic">
+                        {b.roomUrl ? "Not time to join yet" : "No room link yet"}
+                      </div>
+                    )}
+                    <button
+                      onClick={() => requestCancel(b.id)}
+                      className="text-red-600 text-xs underline"
+                    >
+                      Cancel
+                    </button>
                   </div>
-                )}
-              </li>
-            );
+                </li>
+              );
           })}
-        </ul>
-      )}
+          </ul>
+        )}
+
+        {confirmId && (
+          <div className="modal-overlay">
+            <div className="modal">
+              <p>Are you sure you want to cancel this appointment?</p>
+              <div className="flex gap-4 justify-end">
+                <button
+                  className="btn-secondary"
+                  onClick={() => {
+                    cancelBooking(confirmId);
+                    setConfirmId(null);
+                  }}
+                >
+                  Yes
+                </button>
+                <button className="btn-primary" onClick={() => setConfirmId(null)}>
+                  No
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
     </div>
   );
 };

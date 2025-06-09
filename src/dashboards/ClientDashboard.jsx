@@ -58,7 +58,10 @@ const ClientDashboard = () => {
   const fetchBookings = async (uid) => {
     const q = query(collection(db, "bookings"), where("clientId", "==", uid));
     const snap = await getDocs(q);
-    setBookings(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+    const upcoming = snap.docs
+      .map((d) => ({ id: d.id, ...d.data() }))
+      .filter((b) => b.selectedTime && new Date(b.selectedTime) > new Date());
+    setBookings(upcoming);
   };
 
   const handleLogout = async () => {
