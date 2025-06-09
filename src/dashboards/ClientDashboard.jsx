@@ -8,6 +8,9 @@ import {
   doc,
   getDoc,
   setDoc,
+  deleteDoc,
+  query,
+  where,
 } from "firebase/firestore";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
@@ -19,6 +22,7 @@ const ClientDashboard = () => {
   const [profile, setProfile] = useState({ displayName: "", bio: "" });
   const [editing, setEditing] = useState(false);
   const [readers, setReaders] = useState([]);
+  const [bookings, setBookings] = useState([]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -30,6 +34,7 @@ const ClientDashboard = () => {
       const profileRef = doc(db, "users", currentUser.uid);
       const snap = await getDoc(profileRef);
       if (snap.exists()) setProfile(snap.data());
+      fetchBookings(currentUser.uid);
     });
 
     fetchReaders();
@@ -47,6 +52,12 @@ const ClientDashboard = () => {
           r.availableSlots.length > 0
       );
     setReaders(data);
+  };
+
+  const fetchBookings = async (uid) => {
+    const q = query(collection(db, "bookings"), where("clientId", "==", uid));
+    const snap = await getDocs(q);
+    setBookings(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
   };
 
   const handleLogout = async () => {
@@ -72,6 +83,12 @@ const ClientDashboard = () => {
       status: "pending",
     });
     alert("✅ Session booked!");
+    fetchBookings(user.uid);
+  };
+
+  const cancelBooking = async (bookingId) => {
+    await deleteDoc(doc(db, "bookings", bookingId));
+    setBookings((prev) => prev.filter((b) => b.id !== bookingId));
   };
 
   const formatDate = (iso) => {
@@ -183,7 +200,7 @@ const ClientDashboard = () => {
                   {Object.entries(grouped).map(([day, slots]) => (
                     <div key={day} className="mb-2">
                       <div className="font-medium text-sm mb-1">{day}</div>
-                      <div className="flex flex-row flex-wrap gap-2 items-start w-full">
+                      <div className="flex flex-row flex-wrap gap-2 items-start w-full slots-container">
                         {slots.map((slot) => (
                           <button
                             key={slot}
@@ -200,6 +217,24 @@ const ClientDashboard = () => {
               </li>
             );
           })}
+        </ul>
+      )}
+
+      <h2 className="text-lg font-semibold mt-8 mb-2">📘 Your Bookings</h2>
+      {bookings.length === 0 ? (
+        <p className="text-sm text-gray-500">No bookings yet.</p>
+      ) : (
+        <ul className="space-y-2">
+          {bookings.map((b) => (
+            <li key={b.id} className="border-b pb-1 text-sm flex justify-between items-center">
+              <span>
+                {new Date(b.selectedTime).toLocaleString()} — Reader: {b.readerId}
+              </span>
+              <button onClick={() => cancelBooking(b.id)} className="text-red-600 text-xs underline">
+                Cancel
+              </button>
+            </li>
+          ))}
         </ul>
       )}
 
