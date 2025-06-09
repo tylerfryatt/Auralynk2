@@ -205,7 +205,7 @@ const ClientDashboard = () => {
             const grouped = groupSlotsByDay(reader.availableSlots);
             return (
               <li key={reader.id} className="reader-card">
-                <h3 className="text-md font-semibold">{reader.displayName}</h3>
+                <h3 className="text-md font-semibold text-gray-800">{reader.displayName}</h3>
                 <p className="text-sm text-gray-600">{reader.bio}</p>
                 <p className="text-sm italic text-gray-500 mt-1">
                   Services: {(reader.services || []).join(", ")}
@@ -214,7 +214,7 @@ const ClientDashboard = () => {
                 <div className="mt-4 slots-container">
                   {Object.entries(grouped).map(([day, slots]) => (
                     <div key={day} className="mb-2">
-                      <div className="font-medium text-sm mb-1">{day}</div>
+                      <div className="font-medium text-sm mb-1 text-gray-800">{day}</div>
                       <div className="flex flex-row flex-wrap gap-2 items-start w-full">
                         {slots.map((slot) => (
                           <button

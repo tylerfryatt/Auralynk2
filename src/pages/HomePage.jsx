@@ -10,7 +10,7 @@ const HomePage = () => {
         <Link to="/client" className="btn-primary">
           Client Dashboard
         </Link>
-        <Link to="/reader" className="btn-secondary">
+        <Link to="/reader" className="btn-gradient">
           Reader Dashboard
         </Link>
       </div>
