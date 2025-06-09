@@ -24,6 +24,7 @@ const ClientDashboard = () => {
   const [readers, setReaders] = useState([]);
   const [bookings, setBookings] = useState([]);
   const [confirmId, setConfirmId] = useState(null);
+  const [pendingBooking, setPendingBooking] = useState(null);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -86,8 +87,15 @@ const ClientDashboard = () => {
       selectedTime: time.toISOString(),
       status: "pending",
     });
-    alert("✅ Session booked!");
     fetchBookings(user.uid);
+  };
+
+  const requestBook = (reader, slot) => {
+    setPendingBooking({
+      readerId: reader.id,
+      readerName: reader.displayName,
+      slot,
+    });
   };
 
   const cancelBooking = async (bookingId) => {
@@ -212,7 +220,7 @@ const ClientDashboard = () => {
                         {slots.map((slot) => (
                           <button
                             key={slot}
-                            onClick={() => handleBook(reader.id, slot)}
+                            onClick={() => requestBook(reader, slot)}
                             className="bg-blue-600 text-white text-xs px-3 py-1 rounded hover:bg-blue-700 whitespace-nowrap flex-shrink-0"
                           >
                             {formatTime(slot)}
@@ -244,6 +252,34 @@ const ClientDashboard = () => {
             </li>
           ))}
         </ul>
+      )}
+
+      {pendingBooking && (
+        <div className="modal-overlay">
+          <div className="modal">
+            <p>
+              Are you sure you want to book an appointment with{' '}
+              {pendingBooking.readerName}?
+            </p>
+            <div className="flex gap-4 justify-end">
+              <button
+                className="btn-primary"
+                onClick={() => {
+                  handleBook(pendingBooking.readerId, pendingBooking.slot);
+                  setPendingBooking(null);
+                }}
+              >
+                Yes
+              </button>
+              <button
+                className="btn-gradient"
+                onClick={() => setPendingBooking(null)}
+              >
+                No
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {confirmId && (

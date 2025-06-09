@@ -19,6 +19,9 @@
   .btn-secondary {
     @apply bg-teal-600 text-white px-4 py-2 rounded hover:bg-teal-700 transition;
   }
+  .btn-gradient {
+    @apply bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-4 py-2 rounded hover:from-indigo-700 hover:to-purple-700 transition;
+  }
   .slots-container {
     @apply bg-white bg-opacity-90 p-2 rounded border border-gray-200;
   }
