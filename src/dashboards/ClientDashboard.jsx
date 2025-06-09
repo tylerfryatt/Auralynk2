@@ -56,7 +56,11 @@ const ClientDashboard = () => {
   };
 
   const fetchBookings = async (uid) => {
-    const q = query(collection(db, "bookings"), where("clientId", "==", uid));
+    const q = query(
+      collection(db, "bookings"),
+      where("clientId", "==", uid),
+      where("status", "==", "accepted")
+    );
     const snap = await getDocs(q);
     const upcoming = snap.docs
       .map((d) => ({ id: d.id, ...d.data() }))
