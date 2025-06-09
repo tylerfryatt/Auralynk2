@@ -24,8 +24,7 @@ const BookingPage = () => {
     if (!uid) return () => {};
     const q = query(
       collection(db, "bookings"),
-      where("readerId", "==", uid),
-      where("status", "==", "pending")
+      where("readerId", "==", uid)
     );
     const unsub = onSnapshot(q, async (snapshot) => {
       const allBookings = await Promise.all(
@@ -44,7 +43,8 @@ const BookingPage = () => {
           };
         })
       );
-      setBookings(allBookings);
+      const pending = allBookings.filter((b) => b.status === "pending");
+      setBookings(pending);
     });
     return unsub;
   };
