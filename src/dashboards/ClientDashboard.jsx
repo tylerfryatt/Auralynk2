@@ -11,6 +11,7 @@ import {
   deleteDoc,
   query,
   where,
+  onSnapshot,
 } from "firebase/firestore";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
@@ -35,7 +36,6 @@ const ClientDashboard = () => {
       const profileRef = doc(db, "users", currentUser.uid);
       const snap = await getDoc(profileRef);
       if (snap.exists()) setProfile(snap.data());
-      fetchBookings(currentUser.uid);
     });
 
     fetchReaders();
@@ -55,18 +55,21 @@ const ClientDashboard = () => {
     setReaders(data);
   };
 
-  const fetchBookings = async (uid) => {
+  useEffect(() => {
+    if (!user) return;
     const q = query(
       collection(db, "bookings"),
-      where("clientId", "==", uid),
+      where("clientId", "==", user.uid),
       where("status", "==", "accepted")
     );
-    const snap = await getDocs(q);
-    const upcoming = snap.docs
-      .map((d) => ({ id: d.id, ...d.data() }))
-      .filter((b) => b.selectedTime && new Date(b.selectedTime) > new Date());
-    setBookings(upcoming);
-  };
+    const unsubscribe = onSnapshot(q, (snap) => {
+      const upcoming = snap.docs
+        .map((d) => ({ id: d.id, ...d.data() }))
+        .filter((b) => b.selectedTime && new Date(b.selectedTime) > new Date());
+      setBookings(upcoming);
+    });
+    return () => unsubscribe();
+  }, [user]);
 
   const handleLogout = async () => {
     await signOut(auth);
@@ -90,7 +93,7 @@ const ClientDashboard = () => {
       selectedTime: time.toISOString(),
       status: "pending",
     });
-    fetchBookings(user.uid);
+    alert("✅ Appointment request sent!");
   };
 
   const requestBook = (reader, slot) => {
