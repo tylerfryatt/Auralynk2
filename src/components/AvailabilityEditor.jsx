@@ -8,6 +8,7 @@ import {
   updateDoc,
   arrayUnion,
   arrayRemove,
+  Timestamp,
 } from "firebase/firestore";
 
 const AvailabilityEditor = () => {
@@ -29,7 +30,17 @@ const AvailabilityEditor = () => {
           const data = snap.data();
           const now = new Date();
           const cleaned = Array.from(
-            new Set((data.availableSlots || []).filter((s) => new Date(s) > now))
+            new Set(
+              (data.availableSlots || [])
+                .map((s) => {
+                  if (s instanceof Timestamp) return s.toDate().toISOString();
+                  if (s && typeof s === "object" && s.seconds)
+                    return new Date(s.seconds * 1000).toISOString();
+                  const d = new Date(s);
+                  return isNaN(d) ? null : d.toISOString();
+                })
+                .filter((iso) => iso && new Date(iso) > now)
+            )
           );
 
           setAvailability(cleaned);

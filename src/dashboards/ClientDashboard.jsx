@@ -12,6 +12,8 @@ import {
   query,
   where,
   onSnapshot,
+  Timestamp,
+  updateDoc,
 } from "firebase/firestore";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
@@ -56,15 +58,37 @@ const ClientDashboard = () => {
 
     const now = new Date();
 
-    const data = usersSnap.docs
-      .map((doc) => ({ id: doc.id, ...doc.data() }))
-      .filter((u) => u.role === "reader")
-      .map((u) => {
-        const slots = Array.from(
-          new Set((u.availableSlots || []).filter((s) => new Date(s) > now))
-        );
-        return { ...u, availableSlots: slots, ...profileMap[u.id] };
-      });
+    const data = await Promise.all(
+      usersSnap.docs
+        .map((doc) => ({ id: doc.id, ...doc.data() }))
+        .filter((u) => u.role === "reader")
+        .map(async (u) => {
+          const cleaned = (u.availableSlots || [])
+            .map((s) => {
+              if (s instanceof Timestamp) return s.toDate();
+              if (s && typeof s === "object" && s.seconds)
+                return new Date(s.seconds * 1000);
+              const d = new Date(s);
+              return isNaN(d) ? null : d;
+            })
+            .filter((d) => d && d > now)
+            .map((d) => d.toISOString());
+
+          const slots = Array.from(new Set(cleaned));
+
+          if (u.availableSlots && slots.length !== u.availableSlots.length) {
+            try {
+              await updateDoc(doc(db, "users", u.id), {
+                availableSlots: slots,
+              });
+            } catch (err) {
+              console.error("Failed to update slots", err);
+            }
+          }
+
+          return { ...u, availableSlots: slots, ...profileMap[u.id] };
+        })
+    );
 
     setReaders(data);
   };
