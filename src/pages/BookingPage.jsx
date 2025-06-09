@@ -41,6 +41,12 @@ const BookingPage = () => {
     try {
       const bookingRef = doc(db, "bookings", bookingId);
       await updateDoc(bookingRef, { status });
+
+      if (status !== "pending") {
+        // immediately remove from UI so it disappears without a page reload
+        setBookings((prev) => prev.filter((b) => b.id !== bookingId));
+      }
+
       fetchBookings(user?.uid);
     } catch (err) {
       console.error("Failed to update booking", err);
