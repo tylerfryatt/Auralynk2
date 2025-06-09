@@ -115,7 +115,7 @@ const ReaderDashboard = () => {
     const time = new Date(selectedTime);
     const now = new Date();
     const diff = (time - now) / 1000 / 60;
-    return diff <= 15 && diff >= -60;
+    return diff <= 10 && diff >= -60;
   };
 
   const handleLogout = async () => {

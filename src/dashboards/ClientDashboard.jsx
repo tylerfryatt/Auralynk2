@@ -180,7 +180,7 @@ const ClientDashboard = () => {
   const isSessionJoinable = (selectedTime) => {
     const time = new Date(selectedTime);
     const diff = (time - new Date()) / 1000 / 60;
-    return diff <= 15 && diff >= -60;
+    return diff <= 10 && diff >= -60;
   };
 
   return (
