@@ -98,8 +98,9 @@ const ClientDashboard = () => {
           };
         })
       );
+      const oneHourAgo = Date.now() - 60 * 60 * 1000;
       const upcoming = mapped.filter(
-        (b) => b.selectedTime && new Date(b.selectedTime) > new Date()
+        (b) => b.selectedTime && new Date(b.selectedTime) > new Date(oneHourAgo)
       );
       setBookings(upcoming);
     });
@@ -174,6 +175,12 @@ const ClientDashboard = () => {
         acc[day].push(iso);
         return acc;
       }, {});
+  };
+
+  const isSessionJoinable = (selectedTime) => {
+    const time = new Date(selectedTime);
+    const diff = (time - new Date()) / 1000 / 60;
+    return diff <= 15 && diff >= -60;
   };
 
   return (
@@ -286,16 +293,30 @@ const ClientDashboard = () => {
         <p className="text-sm text-gray-500">No bookings yet.</p>
       ) : (
         <ul className="space-y-2">
-          {bookings.map((b) => (
-            <li key={b.id} className="border-b pb-1 text-sm flex justify-between items-center">
-              <span>
-                {new Date(b.selectedTime).toLocaleString()} — Reader: {b.readerName}
-              </span>
-              <button onClick={() => requestCancel(b.id)} className="text-red-600 text-xs underline">
-                Cancel
-              </button>
-            </li>
-          ))}
+          {bookings.map((b) => {
+            const joinable = b.roomUrl && isSessionJoinable(b.selectedTime);
+            return (
+              <li key={b.id} className="border-b pb-1 text-sm flex justify-between items-center">
+                <span>
+                  {new Date(b.selectedTime).toLocaleString()} — Reader: {b.readerName}
+                </span>
+                <div className="flex items-center gap-3">
+                  {joinable ? (
+                    <a href={`/session/${b.id}`} className="text-blue-500 hover:underline text-sm">
+                      🔗 Join Video Session
+                    </a>
+                  ) : (
+                    <div className="text-xs text-gray-500 italic">
+                      {b.roomUrl ? "Not time to join yet" : "No room link yet"}
+                    </div>
+                  )}
+                  <button onClick={() => requestCancel(b.id)} className="text-red-600 text-xs underline">
+                    Cancel
+                  </button>
+                </div>
+              </li>
+            );
+          })}
         </ul>
       )}
 

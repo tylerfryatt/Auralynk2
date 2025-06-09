@@ -84,8 +84,9 @@ const ReaderDashboard = () => {
               };
             })
           );
+          const oneHourAgo = Date.now() - 60 * 60 * 1000;
           const upcoming = mapped.filter(
-            (b) => b.selectedTime && new Date(b.selectedTime) > new Date()
+            (b) => b.selectedTime && new Date(b.selectedTime) > new Date(oneHourAgo)
           );
           setBookings(upcoming);
         });
