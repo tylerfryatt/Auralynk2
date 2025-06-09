@@ -82,21 +82,22 @@ const ClientDashboard = () => {
     if (!user) return;
     const q = query(
       collection(db, "bookings"),
-      where("clientId", "==", user.uid),
-      where("status", "==", "accepted")
+      where("clientId", "==", user.uid)
     );
     const unsubscribe = onSnapshot(q, async (snap) => {
       const mapped = await Promise.all(
-        snap.docs.map(async (d) => {
-          const data = { id: d.id, ...d.data() };
-          const readerDoc = await getDoc(doc(db, "profiles", data.readerId));
-          return {
-            ...data,
-            readerName: readerDoc.exists()
-              ? readerDoc.data().displayName
-              : data.readerId,
-          };
-        })
+        snap.docs
+          .filter((d) => d.data().status === "accepted")
+          .map(async (d) => {
+            const data = { id: d.id, ...d.data() };
+            const readerDoc = await getDoc(doc(db, "profiles", data.readerId));
+            return {
+              ...data,
+              readerName: readerDoc.exists()
+                ? readerDoc.data().displayName
+                : data.readerId,
+            };
+          })
       );
       const oneHourAgo = Date.now() - 60 * 60 * 1000;
       const upcoming = mapped.filter(
