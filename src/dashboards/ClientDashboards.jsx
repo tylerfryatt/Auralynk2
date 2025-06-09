@@ -42,9 +42,19 @@ const ClientDashboard = () => {
     if (!clientId) return;
     const fetchBookings = async () => {
       const querySnapshot = await getDocs(collection(db, "bookings"));
-      const userBookings = querySnapshot.docs
-        .map((doc) => ({ id: doc.id, ...doc.data() }))
-        .filter((b) => b.clientId === clientId);
+      const enriched = await Promise.all(
+        querySnapshot.docs.map(async (docSnap) => {
+          const data = { id: docSnap.id, ...docSnap.data() };
+          const readerDoc = await getDoc(doc(db, "profiles", data.readerId));
+          return {
+            ...data,
+            readerName: readerDoc.exists()
+              ? readerDoc.data().displayName
+              : data.readerId,
+          };
+        })
+      );
+      const userBookings = enriched.filter((b) => b.clientId === clientId);
       setBookings(userBookings);
     };
     fetchBookings();
@@ -171,7 +181,7 @@ const ClientDashboard = () => {
                           disabled={!selectedTimes[reader.id]}
                           className={`mt-4 px-4 py-2 rounded text-white ${
                             selectedTimes[reader.id]
-                              ? "bg-indigo-600 hover:bg-indigo-700"
+                              ? "bg-blue-600 hover:bg-blue-700"
                               : "bg-gray-400 cursor-not-allowed"
                           }`}
                         >
@@ -199,8 +209,7 @@ const ClientDashboard = () => {
           {bookings.map((b, i) => (
             <li key={i} className="border-b pb-1 text-sm">
               <div>
-                {new Date(b.selectedTime).toLocaleString()} — Reader ID:{" "}
-                {b.readerId}
+                {new Date(b.selectedTime).toLocaleString()} — Reader: {b.readerName || b.readerId}
               </div>
               {b.roomUrl && (
                 <a

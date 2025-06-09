@@ -8,10 +8,15 @@ import {
   doc,
   getDoc,
   setDoc,
+  deleteDoc,
+  query,
+  where,
+  onSnapshot,
+  Timestamp,
+  updateDoc,
 } from "firebase/firestore";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
-import PatchReaders from "../components/PatchReaders";
 
 const ClientDashboard = () => {
   const navigate = useNavigate();
@@ -19,6 +24,10 @@ const ClientDashboard = () => {
   const [profile, setProfile] = useState({ displayName: "", bio: "" });
   const [editing, setEditing] = useState(false);
   const [readers, setReaders] = useState([]);
+  const [bookings, setBookings] = useState([]);
+  const [takenSlots, setTakenSlots] = useState({});
+  const [confirmId, setConfirmId] = useState(null);
+  const [pendingBooking, setPendingBooking] = useState(null);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -27,7 +36,7 @@ const ClientDashboard = () => {
         return;
       }
       setUser(currentUser);
-      const profileRef = doc(db, "users", currentUser.uid);
+      const profileRef = doc(db, "profiles", currentUser.uid);
       const snap = await getDoc(profileRef);
       if (snap.exists()) setProfile(snap.data());
     });
@@ -37,17 +46,98 @@ const ClientDashboard = () => {
   }, []);
 
   const fetchReaders = async () => {
-    const snapshot = await getDocs(collection(db, "users"));
-    const data = snapshot.docs
-      .map((doc) => ({ id: doc.id, ...doc.data() }))
-      .filter(
-        (r) =>
-          r.role === "reader" &&
-          Array.isArray(r.availableSlots) &&
-          r.availableSlots.length > 0
-      );
+    const [usersSnap, profilesSnap] = await Promise.all([
+      getDocs(collection(db, "users")),
+      getDocs(collection(db, "profiles")),
+    ]);
+
+    const profileMap = {};
+    profilesSnap.docs.forEach((d) => {
+      profileMap[d.id] = d.data();
+    });
+
+    const now = new Date();
+
+    const data = await Promise.all(
+      usersSnap.docs
+        .map((doc) => ({ id: doc.id, ...doc.data() }))
+        .filter((u) => u.role === "reader")
+        .map(async (u) => {
+          const cleaned = (u.availableSlots || [])
+            .map((s) => {
+              if (s instanceof Timestamp) return s.toDate();
+              if (s && typeof s === "object" && s.seconds)
+                return new Date(s.seconds * 1000);
+              const d = new Date(s);
+              return isNaN(d) ? null : d;
+            })
+            .filter((d) => d && d > now)
+            .map((d) => d.toISOString());
+
+          const slots = Array.from(new Set(cleaned));
+
+          if (u.availableSlots && slots.length !== u.availableSlots.length) {
+            try {
+              await updateDoc(doc(db, "users", u.id), {
+                availableSlots: slots,
+              });
+            } catch (err) {
+              console.error("Failed to update slots", err);
+            }
+          }
+
+          return { ...u, availableSlots: slots, ...profileMap[u.id] };
+        })
+    );
+
     setReaders(data);
   };
+
+  useEffect(() => {
+    const q = query(
+      collection(db, "bookings"),
+      where("status", "==", "accepted")
+    );
+    const unsub = onSnapshot(q, (snap) => {
+      const booked = {};
+      snap.docs.forEach((d) => {
+        const data = d.data();
+        if (!data.readerId || !data.selectedTime) return;
+        if (!booked[data.readerId]) booked[data.readerId] = new Set();
+        booked[data.readerId].add(data.selectedTime);
+      });
+      const obj = {};
+      Object.keys(booked).forEach((rid) => {
+        obj[rid] = Array.from(booked[rid]);
+      });
+      setTakenSlots(obj);
+    });
+    return () => unsub();
+  }, []);
+
+  useEffect(() => {
+    if (!user) return;
+    const q = query(collection(db, "bookings"), where("clientId", "==", user.uid));
+    const unsubscribe = onSnapshot(q, async (snap) => {
+      const accepted = snap.docs.filter((d) => d.data().status === "accepted");
+      const mapped = await Promise.all(
+        accepted.map(async (d) => {
+          const data = { id: d.id, ...d.data() };
+          const readerDoc = await getDoc(doc(db, "profiles", data.readerId));
+          return {
+            ...data,
+            readerName: readerDoc.exists() ? readerDoc.data().displayName : data.readerId,
+          };
+        })
+      );
+      const oneHourAgo = Date.now() - 60 * 60 * 1000;
+      const upcoming = mapped
+        .filter((b) => b.selectedTime && new Date(b.selectedTime) > new Date(oneHourAgo))
+        .sort((a, b) => new Date(a.selectedTime) - new Date(b.selectedTime));
+      setBookings(upcoming);
+    });
+    return () => unsubscribe();
+  }, [user]);
 
   const handleLogout = async () => {
     await signOut(auth);
@@ -56,7 +146,7 @@ const ClientDashboard = () => {
 
   const saveProfile = async () => {
     if (!user) return;
-    const profileRef = doc(db, "users", user.uid);
+    const profileRef = doc(db, "profiles", user.uid);
     await setDoc(profileRef, profile, { merge: true });
     setEditing(false);
   };
@@ -71,7 +161,24 @@ const ClientDashboard = () => {
       selectedTime: time.toISOString(),
       status: "pending",
     });
-    alert("✅ Session booked!");
+    alert("✅ Appointment request sent!");
+  };
+
+  const requestBook = (reader, slot) => {
+    setPendingBooking({
+      readerId: reader.id,
+      readerName: reader.displayName,
+      slot,
+    });
+  };
+
+  const cancelBooking = async (bookingId) => {
+    await deleteDoc(doc(db, "bookings", bookingId));
+    setBookings((prev) => prev.filter((b) => b.id !== bookingId));
+  };
+
+  const requestCancel = (bookingId) => {
+    setConfirmId(bookingId);
   };
 
   const formatDate = (iso) => {
@@ -88,10 +195,11 @@ const ClientDashboard = () => {
     return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   };
 
-  const groupSlotsByDay = (slots) => {
+  const groupSlotsByDay = (slots, booked = []) => {
     const now = new Date();
-    return slots
-      .filter((s) => new Date(s) > now)
+    const bookedSet = new Set(booked);
+    return Array.from(new Set(slots))
+      .filter((s) => new Date(s) > now && !bookedSet.has(s))
       .sort()
       .reduce((acc, iso) => {
         const day = formatDate(iso);
@@ -99,6 +207,12 @@ const ClientDashboard = () => {
         acc[day].push(iso);
         return acc;
       }, {});
+  };
+
+  const isSessionJoinable = (selectedTime) => {
+    const time = new Date(selectedTime);
+    const diff = (time - new Date()) / 1000 / 60;
+    return diff <= 10 && diff >= -60;
   };
 
   return (
@@ -170,32 +284,41 @@ const ClientDashboard = () => {
       ) : (
         <ul className="space-y-6">
           {readers.map((reader) => {
-            const grouped = groupSlotsByDay(reader.availableSlots);
+            const grouped = groupSlotsByDay(
+              reader.availableSlots || [],
+              takenSlots[reader.id] || []
+            );
             return (
-              <li key={reader.id} className="border p-4 rounded shadow">
-                <h3 className="text-md font-semibold">{reader.displayName}</h3>
+              <li key={reader.id} className="reader-card">
+                <h3 className="text-md font-semibold text-gray-800">{reader.displayName}</h3>
                 <p className="text-sm text-gray-600">{reader.bio}</p>
                 <p className="text-sm italic text-gray-500 mt-1">
                   Services: {(reader.services || []).join(", ")}
                 </p>
 
-                <div className="mt-4">
-                  {Object.entries(grouped).map(([day, slots]) => (
-                    <div key={day} className="mb-2">
-                      <div className="font-medium text-sm mb-1">{day}</div>
-                      <div className="flex flex-row flex-wrap gap-2 items-start w-full">
-                        {slots.map((slot) => (
-                          <button
-                            key={slot}
-                            onClick={() => handleBook(reader.id, slot)}
-                            className="bg-indigo-600 text-white text-xs px-3 py-1 rounded hover:bg-indigo-700 whitespace-nowrap flex-shrink-0"
-                          >
-                            {formatTime(slot)}
-                          </button>
-                        ))}
+                <div className="mt-4 slots-container flex flex-row flex-wrap gap-4">
+                  {Object.keys(grouped).length === 0 ? (
+                    <p className="text-sm text-gray-500 italic">
+                      This reader has no availability at this time.
+                    </p>
+                  ) : (
+                    Object.entries(grouped).map(([day, slots]) => (
+                      <div key={day} className="flex flex-col items-start mb-2">
+                        <div className="font-medium text-sm mb-1 text-gray-800">{day}</div>
+                        <div className="flex flex-row flex-wrap gap-2 items-start w-full">
+                          {slots.map((slot) => (
+                            <button
+                              key={slot}
+                              onClick={() => requestBook(reader, slot)}
+                              className="bg-blue-600 text-white text-xs px-3 py-1 rounded hover:bg-blue-700 whitespace-nowrap flex-shrink-0"
+                            >
+                              {formatTime(slot)}
+                            </button>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))
+                  )}
                 </div>
               </li>
             );
@@ -203,8 +326,88 @@ const ClientDashboard = () => {
         </ul>
       )}
 
-      {/* Dev Patch */}
-      <PatchReaders />
+      <h2 className="text-lg font-semibold mt-8 mb-2">📘 Your Bookings</h2>
+      {bookings.length === 0 ? (
+        <p className="text-sm text-gray-500">No bookings yet.</p>
+      ) : (
+        <ul className="space-y-2">
+          {bookings.map((b) => {
+            const joinable = b.roomUrl && isSessionJoinable(b.selectedTime);
+            return (
+              <li key={b.id} className="border-b pb-1 text-sm flex justify-between items-center">
+                <span>
+                  {new Date(b.selectedTime).toLocaleString()} — Reader: {b.readerName}
+                </span>
+                <div className="flex items-center gap-3">
+                  {joinable ? (
+                    <a href={`/session/${b.id}`} className="text-blue-500 hover:underline text-sm">
+                      🔗 Join Video Session
+                    </a>
+                  ) : (
+                    <div className="text-xs text-gray-500 italic">
+                      {b.roomUrl ? "Not time to join yet" : "No room link yet"}
+                    </div>
+                  )}
+                  <button onClick={() => requestCancel(b.id)} className="text-red-600 text-xs underline">
+                    Cancel
+                  </button>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+
+      {pendingBooking && (
+        <div className="modal-overlay">
+          <div className="modal">
+            <p>
+              Are you sure you want to book an appointment with{' '}
+              {pendingBooking.readerName}?
+            </p>
+            <div className="flex gap-4 justify-end">
+              <button
+                className="btn-primary"
+                onClick={() => {
+                  handleBook(pendingBooking.readerId, pendingBooking.slot);
+                  setPendingBooking(null);
+                }}
+              >
+                Yes
+              </button>
+              <button
+                className="btn-gradient"
+                onClick={() => setPendingBooking(null)}
+              >
+                No
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {confirmId && (
+        <div className="modal-overlay">
+          <div className="modal">
+            <p>Are you sure you want to cancel this appointment?</p>
+            <div className="flex gap-4 justify-end">
+              <button
+                className="btn-secondary"
+                onClick={() => {
+                  cancelBooking(confirmId);
+                  setConfirmId(null);
+                }}
+              >
+                Yes
+              </button>
+              <button className="btn-primary" onClick={() => setConfirmId(null)}>
+                No
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };
