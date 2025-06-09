@@ -201,11 +201,11 @@ const ClientDashboard = () => {
                   Services: {(reader.services || []).join(", ")}
                 </p>
 
-                <div className="mt-4">
+                <div className="mt-4 slots-container">
                   {Object.entries(grouped).map(([day, slots]) => (
                     <div key={day} className="mb-2">
                       <div className="font-medium text-sm mb-1">{day}</div>
-                      <div className="flex flex-row flex-wrap gap-2 items-start w-full slots-container">
+                      <div className="flex flex-row flex-wrap gap-2 items-start w-full">
                         {slots.map((slot) => (
                           <button
                             key={slot}
