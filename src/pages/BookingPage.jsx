@@ -3,11 +3,13 @@ import { auth, db } from "../firebase";
 import {
   collection,
   getDocs,
+  getDoc,
   doc,
   updateDoc,
   deleteDoc,
   query,
   where,
+  onSnapshot,
 } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
@@ -18,15 +20,14 @@ const BookingPage = () => {
   const [pendingAccept, setPendingAccept] = useState(null);
   const navigate = useNavigate();
 
-  const fetchBookings = async (uid) => {
-    if (!uid) return;
-    try {
-      const q = query(
-        collection(db, "bookings"),
-        where("readerId", "==", uid),
-        where("status", "==", "pending")
-      );
-      const snapshot = await getDocs(q);
+  const fetchBookings = (uid) => {
+    if (!uid) return () => {};
+    const q = query(
+      collection(db, "bookings"),
+      where("readerId", "==", uid),
+      where("status", "==", "pending")
+    );
+    const unsub = onSnapshot(q, async (snapshot) => {
       const allBookings = await Promise.all(
         snapshot.docs.map(async (docSnap) => {
           const data = { id: docSnap.id, ...docSnap.data() };
@@ -44,9 +45,8 @@ const BookingPage = () => {
         })
       );
       setBookings(allBookings);
-    } catch (err) {
-      console.error("Failed to load bookings", err);
-    }
+    });
+    return unsub;
   };
 
   const updateStatus = async (bookingId, status) => {
@@ -58,8 +58,6 @@ const BookingPage = () => {
         // immediately remove from UI so it disappears without a page reload
         setBookings((prev) => prev.filter((b) => b.id !== bookingId));
       }
-
-      fetchBookings(user?.uid);
     } catch (err) {
       console.error("Failed to update booking", err);
     }
@@ -67,24 +65,27 @@ const BookingPage = () => {
 
   const deleteBooking = async (bookingId) => {
     try {
-      await deleteDoc(doc(db, "bookings", bookingId));
-      fetchBookings(user?.uid);
-    } catch (err) {
-      console.error("Failed to delete booking", err);
-    }
-  };
+    await deleteDoc(doc(db, "bookings", bookingId));
+  } catch (err) {
+    console.error("Failed to delete booking", err);
+  }
+};
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (u) => {
+    let unsubBookings = () => {};
+    const unsubAuth = onAuthStateChanged(auth, (u) => {
       if (!u) {
         navigate("/login");
       } else {
         setUser(u);
-        fetchBookings(u.uid);
+        unsubBookings = fetchBookings(u.uid);
       }
     });
 
-    return () => unsub();
+    return () => {
+      unsubAuth();
+      unsubBookings();
+    };
   }, [navigate]);
 
   return (

@@ -4,12 +4,12 @@ import { auth, db } from "../firebase";
 import {
   doc,
   getDoc,
-  getDocs,
   collection,
   query,
   where,
   setDoc,
   deleteDoc,
+  onSnapshot,
 } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 import AvailabilityEditor from "../components/AvailabilityEditor";
@@ -19,11 +19,14 @@ const ReaderDashboard = () => {
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
   const [bookings, setBookings] = useState([]);
+  const [pendingCount, setPendingCount] = useState(0);
   const [editing, setEditing] = useState(false);
   const [formData, setFormData] = useState({ displayName: "", bio: "" });
   const [confirmId, setConfirmId] = useState(null);
 
   useEffect(() => {
+    let unsubAccepted = () => {};
+    let unsubPending = () => {};
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       if (!currentUser) {
         console.log("👤 Not logged in, redirecting...");
@@ -61,36 +64,48 @@ const ReaderDashboard = () => {
       }
 
       try {
-        const bookingsQuery = query(
+        const acceptedQuery = query(
           collection(db, "bookings"),
-          where("readerId", "==", currentUser.uid)
+          where("readerId", "==", currentUser.uid),
+          where("status", "==", "accepted")
         );
-        const snapshot = await getDocs(bookingsQuery);
-        const mapped = await Promise.all(
-          snapshot.docs.map(async (docSnap) => {
-            const data = { id: docSnap.id, ...docSnap.data() };
-            const clientDoc = await getDoc(doc(db, "profiles", data.clientId));
-            return {
-              ...data,
-              clientName: clientDoc.exists()
-                ? clientDoc.data().displayName
-                : data.clientId,
-            };
-          })
+        unsubAccepted = onSnapshot(acceptedQuery, async (snapshot) => {
+          const mapped = await Promise.all(
+            snapshot.docs.map(async (docSnap) => {
+              const data = { id: docSnap.id, ...docSnap.data() };
+              const clientDoc = await getDoc(doc(db, "profiles", data.clientId));
+              return {
+                ...data,
+                clientName: clientDoc.exists()
+                  ? clientDoc.data().displayName
+                  : data.clientId,
+              };
+            })
+          );
+          const upcoming = mapped.filter(
+            (b) => b.selectedTime && new Date(b.selectedTime) > new Date()
+          );
+          setBookings(upcoming);
+        });
+
+        const pendingQuery = query(
+          collection(db, "bookings"),
+          where("readerId", "==", currentUser.uid),
+          where("status", "==", "pending")
         );
-        const upcoming = mapped.filter(
-          (b) =>
-            b.status === "accepted" &&
-            b.selectedTime &&
-            new Date(b.selectedTime) > new Date()
-        );
-        setBookings(upcoming);
+        unsubPending = onSnapshot(pendingQuery, (snap) => {
+          setPendingCount(snap.size);
+        });
       } catch (err) {
         console.error("❌ Error fetching bookings:", err);
       }
     });
 
-    return () => unsubscribe();
+    return () => {
+      unsubscribe();
+      unsubAccepted();
+      unsubPending();
+    };
   }, [navigate]);
 
   const isSessionJoinable = (selectedTime) => {
@@ -137,11 +152,8 @@ const ReaderDashboard = () => {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">🌙 Reader Dashboard</h1>
         <div className="flex items-center gap-4">
-          <Link
-            to="/book"
-            className="text-sm text-blue-600 hover:underline"
-          >
-            📋 Manage Bookings
+          <Link to="/book" className="text-sm text-blue-600 hover:underline">
+            📋 Manage Bookings{pendingCount > 0 ? ` (${pendingCount})` : ""}
           </Link>
           <button
             onClick={handleLogout}

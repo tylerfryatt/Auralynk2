@@ -5,10 +5,10 @@ import {
   collection,
   query,
   where,
-  getDocs,
   getDoc,
   updateDoc,
   doc,
+  onSnapshot,
 } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 import { format } from "date-fns";
@@ -18,40 +18,39 @@ const ReaderBookings = () => {
   const [readerId, setReaderId] = useState(null);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        setReaderId(user.uid);
-        const q = query(collection(db, "bookings"), where("readerId", "==", user.uid));
-        const snapshot = await getDocs(q);
-        const bookingData = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
-
-        const enrichedBookings = await Promise.all(
-          bookingData.map(async (booking) => {
-            const clientDoc = await getDoc(doc(db, "profiles", booking.clientId));
-            return {
-              ...booking,
-              clientName: clientDoc.exists()
-                ? clientDoc.data().displayName
-                : booking.clientId,
-            };
-          })
-        );
-
-        setBookings(enrichedBookings);
-      }
+    const unsubAuth = onAuthStateChanged(auth, (user) => {
+      if (user) setReaderId(user.uid);
     });
-
-    return () => unsubscribe();
+    return () => unsubAuth();
   }, []);
+
+  useEffect(() => {
+    if (!readerId) return;
+    const q = query(
+      collection(db, "bookings"),
+      where("readerId", "==", readerId),
+      where("status", "==", "pending")
+    );
+    const unsub = onSnapshot(q, async (snapshot) => {
+      const bookingData = await Promise.all(
+        snapshot.docs.map(async (docSnap) => {
+          const data = { id: docSnap.id, ...docSnap.data() };
+          const clientDoc = await getDoc(doc(db, "profiles", data.clientId));
+          return {
+            ...data,
+            clientName: clientDoc.exists()
+              ? clientDoc.data().displayName
+              : data.clientId,
+          };
+        })
+      );
+      setBookings(bookingData);
+    });
+    return () => unsub();
+  }, [readerId]);
 
   const updateStatus = async (bookingId, status) => {
     await updateDoc(doc(db, "bookings", bookingId), { status });
-    setBookings((prev) =>
-      prev.map((b) => (b.id === bookingId ? { ...b, status } : b))
-    );
   };
 
   return (
