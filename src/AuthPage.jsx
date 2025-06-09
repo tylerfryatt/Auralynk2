@@ -63,8 +63,8 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="p-4 max-w-md mx-auto">
-      <h1 className="text-2xl font-bold mb-4">
+    <div className="p-4 max-w-md mx-auto space-y-4">
+      <h1 className="text-2xl font-display font-bold">
         {isNewUser ? "Sign Up" : "Log In"}
       </h1>
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
@@ -94,16 +94,13 @@ export default function AuthPage() {
             <option value="reader">Reader</option>
           </select>
         )}
-        <button
-          type="submit"
-          className="bg-blue-500 text-white p-2 rounded hover:bg-blue-600"
-        >
+        <button type="submit" className="btn-primary">
           {isNewUser ? "Create Account" : "Log In"}
         </button>
         <button
           type="button"
           onClick={() => setIsNewUser(!isNewUser)}
-          className="text-sm underline"
+          className="text-sm underline text-indigo-200"
         >
           {isNewUser ? "Already have an account?" : "Need to create an account?"}
         </button>
