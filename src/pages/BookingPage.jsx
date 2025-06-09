@@ -1,21 +1,32 @@
 import React, { useEffect, useState } from "react";
-import { db } from "../firebase";
+import { auth, db } from "../firebase";
 import {
   collection,
   getDocs,
   doc,
   updateDoc,
   deleteDoc,
+  query,
+  where,
 } from "firebase/firestore";
+import { onAuthStateChanged } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
 
 const BookingPage = () => {
   const [bookings, setBookings] = useState([]);
+  const [user, setUser] = useState(null);
+  const [pendingAccept, setPendingAccept] = useState(null);
   const navigate = useNavigate();
 
-  const fetchBookings = async () => {
+  const fetchBookings = async (uid) => {
+    if (!uid) return;
     try {
-      const snapshot = await getDocs(collection(db, "bookings"));
+      const q = query(
+        collection(db, "bookings"),
+        where("readerId", "==", uid),
+        where("status", "==", "pending")
+      );
+      const snapshot = await getDocs(q);
       const allBookings = snapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
@@ -30,7 +41,7 @@ const BookingPage = () => {
     try {
       const bookingRef = doc(db, "bookings", bookingId);
       await updateDoc(bookingRef, { status });
-      fetchBookings();
+      fetchBookings(user?.uid);
     } catch (err) {
       console.error("Failed to update booking", err);
     }
@@ -39,15 +50,24 @@ const BookingPage = () => {
   const deleteBooking = async (bookingId) => {
     try {
       await deleteDoc(doc(db, "bookings", bookingId));
-      fetchBookings();
+      fetchBookings(user?.uid);
     } catch (err) {
       console.error("Failed to delete booking", err);
     }
   };
 
   useEffect(() => {
-    fetchBookings();
-  }, []);
+    const unsub = onAuthStateChanged(auth, (u) => {
+      if (!u) {
+        navigate("/login");
+      } else {
+        setUser(u);
+        fetchBookings(u.uid);
+      }
+    });
+
+    return () => unsub();
+  }, [navigate]);
 
   return (
     <div className="p-6">
@@ -74,7 +94,7 @@ const BookingPage = () => {
 
               <div className="mt-2 space-x-2">
                 <button
-                  onClick={() => updateStatus(booking.id, "accepted")}
+                  onClick={() => setPendingAccept(booking)}
                   className="bg-green-500 text-white px-2 py-1 rounded text-sm"
                 >
                   Accept
@@ -95,6 +115,35 @@ const BookingPage = () => {
             </li>
           ))}
         </ul>
+      )}
+
+      {pendingAccept && (
+        <div className="modal-overlay">
+          <div className="modal">
+            <p>
+              Are you sure you want to book this appointment with client{' '}
+              {pendingAccept.clientId} at{' '}
+              {new Date(pendingAccept.selectedTime).toLocaleString()}?
+            </p>
+            <div className="flex gap-4 justify-end">
+              <button
+                className="btn-secondary"
+                onClick={() => {
+                  updateStatus(pendingAccept.id, 'accepted');
+                  setPendingAccept(null);
+                }}
+              >
+                Yes
+              </button>
+              <button
+                className="btn-primary"
+                onClick={() => setPendingAccept(null)}
+              >
+                No
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

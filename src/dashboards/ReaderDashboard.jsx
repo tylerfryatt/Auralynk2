@@ -69,7 +69,10 @@ const ReaderDashboard = () => {
         const upcoming = snapshot.docs
           .map((doc) => ({ id: doc.id, ...doc.data() }))
           .filter(
-            (b) => b.selectedTime && new Date(b.selectedTime) > new Date()
+            (b) =>
+              b.status === "accepted" &&
+              b.selectedTime &&
+              new Date(b.selectedTime) > new Date()
           );
         setBookings(upcoming);
       } catch (err) {
