@@ -23,6 +23,7 @@ const ClientDashboard = () => {
   const [editing, setEditing] = useState(false);
   const [readers, setReaders] = useState([]);
   const [bookings, setBookings] = useState([]);
+  const [takenSlots, setTakenSlots] = useState({});
   const [confirmId, setConfirmId] = useState(null);
   const [pendingBooking, setPendingBooking] = useState(null);
 
@@ -54,6 +55,28 @@ const ClientDashboard = () => {
       );
     setReaders(data);
   };
+
+  useEffect(() => {
+    const q = query(
+      collection(db, "bookings"),
+      where("status", "==", "accepted")
+    );
+    const unsub = onSnapshot(q, (snap) => {
+      const booked = {};
+      snap.docs.forEach((d) => {
+        const data = d.data();
+        if (!data.readerId || !data.selectedTime) return;
+        if (!booked[data.readerId]) booked[data.readerId] = new Set();
+        booked[data.readerId].add(data.selectedTime);
+      });
+      const obj = {};
+      Object.keys(booked).forEach((rid) => {
+        obj[rid] = Array.from(booked[rid]);
+      });
+      setTakenSlots(obj);
+    });
+    return () => unsub();
+  }, []);
 
   useEffect(() => {
     if (!user) return;
@@ -139,10 +162,11 @@ const ClientDashboard = () => {
     return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   };
 
-  const groupSlotsByDay = (slots) => {
+  const groupSlotsByDay = (slots, booked = []) => {
     const now = new Date();
+    const bookedSet = new Set(booked);
     return slots
-      .filter((s) => new Date(s) > now)
+      .filter((s) => new Date(s) > now && !bookedSet.has(s))
       .sort()
       .reduce((acc, iso) => {
         const day = formatDate(iso);
@@ -221,7 +245,10 @@ const ClientDashboard = () => {
       ) : (
         <ul className="space-y-6">
           {readers.map((reader) => {
-            const grouped = groupSlotsByDay(reader.availableSlots);
+            const grouped = groupSlotsByDay(
+              reader.availableSlots,
+              takenSlots[reader.id] || []
+            );
             return (
               <li key={reader.id} className="reader-card">
                 <h3 className="text-md font-semibold text-gray-800">{reader.displayName}</h3>
@@ -230,9 +257,9 @@ const ClientDashboard = () => {
                   Services: {(reader.services || []).join(", ")}
                 </p>
 
-                <div className="mt-4 slots-container">
+                <div className="mt-4 slots-container flex flex-row flex-wrap gap-4">
                   {Object.entries(grouped).map(([day, slots]) => (
-                    <div key={day} className="mb-2">
+                    <div key={day} className="flex flex-col items-start mb-2">
                       <div className="font-medium text-sm mb-1 text-gray-800">{day}</div>
                       <div className="flex flex-row flex-wrap gap-2 items-start w-full">
                         {slots.map((slot) => (
