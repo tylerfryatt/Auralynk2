@@ -14,7 +14,6 @@ import {
 } from "firebase/firestore";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
-import PatchReaders from "../components/PatchReaders";
 
 const ClientDashboard = () => {
   const navigate = useNavigate();
@@ -304,8 +303,6 @@ const ClientDashboard = () => {
         </div>
       )}
 
-      {/* Dev Patch */}
-      <PatchReaders />
     </div>
   );
 };

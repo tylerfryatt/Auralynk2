@@ -11,7 +11,7 @@
 
 @layer components {
   .glass-card {
-    @apply bg-white bg-opacity-60 backdrop-blur-lg rounded-xl shadow-lg;
+    @apply bg-white bg-opacity-60 backdrop-blur-lg rounded-xl shadow-lg text-gray-800;
   }
   .btn-primary {
     @apply bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition;
@@ -23,10 +23,10 @@
     @apply bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-4 py-2 rounded hover:from-indigo-700 hover:to-purple-700 transition;
   }
   .slots-container {
-    @apply bg-white bg-opacity-90 p-2 rounded border border-gray-200;
+    @apply bg-white bg-opacity-90 p-2 rounded border border-gray-200 text-gray-800;
   }
   .reader-card {
-    @apply bg-white bg-opacity-95 border p-4 rounded shadow;
+    @apply bg-white bg-opacity-95 border p-4 rounded shadow text-gray-800;
   }
   .modal-overlay {
     @apply fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50;
