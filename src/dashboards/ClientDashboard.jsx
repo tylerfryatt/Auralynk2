@@ -23,6 +23,7 @@ const ClientDashboard = () => {
   const [editing, setEditing] = useState(false);
   const [readers, setReaders] = useState([]);
   const [bookings, setBookings] = useState([]);
+  const [confirmId, setConfirmId] = useState(null);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -89,6 +90,10 @@ const ClientDashboard = () => {
   const cancelBooking = async (bookingId) => {
     await deleteDoc(doc(db, "bookings", bookingId));
     setBookings((prev) => prev.filter((b) => b.id !== bookingId));
+  };
+
+  const requestCancel = (bookingId) => {
+    setConfirmId(bookingId);
   };
 
   const formatDate = (iso) => {
@@ -230,12 +235,34 @@ const ClientDashboard = () => {
               <span>
                 {new Date(b.selectedTime).toLocaleString()} — Reader: {b.readerId}
               </span>
-              <button onClick={() => cancelBooking(b.id)} className="text-red-600 text-xs underline">
+              <button onClick={() => requestCancel(b.id)} className="text-red-600 text-xs underline">
                 Cancel
               </button>
             </li>
           ))}
         </ul>
+      )}
+
+      {confirmId && (
+        <div className="modal-overlay">
+          <div className="modal">
+            <p>Are you sure you want to cancel this appointment?</p>
+            <div className="flex gap-4 justify-end">
+              <button
+                className="btn-secondary"
+                onClick={() => {
+                  cancelBooking(confirmId);
+                  setConfirmId(null);
+                }}
+              >
+                Yes
+              </button>
+              <button className="btn-primary" onClick={() => setConfirmId(null)}>
+                No
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Dev Patch */}
