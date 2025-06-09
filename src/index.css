@@ -4,7 +4,8 @@
 
 @layer base {
   body {
-    @apply bg-gradient-to-br from-indigo-200 via-purple-200 to-indigo-300 text-gray-800 font-sans min-h-screen;
+    /* vibrant indigo/purple gradient with light text for a soulful feel */
+    @apply bg-gradient-to-br from-indigo-600 via-purple-500 to-indigo-700 text-white font-sans min-h-screen;
   }
 }
 
