@@ -62,10 +62,22 @@ const ClientDashboard = () => {
       where("clientId", "==", user.uid),
       where("status", "==", "accepted")
     );
-    const unsubscribe = onSnapshot(q, (snap) => {
-      const upcoming = snap.docs
-        .map((d) => ({ id: d.id, ...d.data() }))
-        .filter((b) => b.selectedTime && new Date(b.selectedTime) > new Date());
+    const unsubscribe = onSnapshot(q, async (snap) => {
+      const mapped = await Promise.all(
+        snap.docs.map(async (d) => {
+          const data = { id: d.id, ...d.data() };
+          const readerDoc = await getDoc(doc(db, "profiles", data.readerId));
+          return {
+            ...data,
+            readerName: readerDoc.exists()
+              ? readerDoc.data().displayName
+              : data.readerId,
+          };
+        })
+      );
+      const upcoming = mapped.filter(
+        (b) => b.selectedTime && new Date(b.selectedTime) > new Date()
+      );
       setBookings(upcoming);
     });
     return () => unsubscribe();
@@ -250,7 +262,7 @@ const ClientDashboard = () => {
           {bookings.map((b) => (
             <li key={b.id} className="border-b pb-1 text-sm flex justify-between items-center">
               <span>
-                {new Date(b.selectedTime).toLocaleString()} — Reader: {b.readerId}
+                {new Date(b.selectedTime).toLocaleString()} — Reader: {b.readerName}
               </span>
               <button onClick={() => requestCancel(b.id)} className="text-red-600 text-xs underline">
                 Cancel

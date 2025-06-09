@@ -66,14 +66,24 @@ const ReaderDashboard = () => {
           where("readerId", "==", currentUser.uid)
         );
         const snapshot = await getDocs(bookingsQuery);
-        const upcoming = snapshot.docs
-          .map((doc) => ({ id: doc.id, ...doc.data() }))
-          .filter(
-            (b) =>
-              b.status === "accepted" &&
-              b.selectedTime &&
-              new Date(b.selectedTime) > new Date()
-          );
+        const mapped = await Promise.all(
+          snapshot.docs.map(async (docSnap) => {
+            const data = { id: docSnap.id, ...docSnap.data() };
+            const clientDoc = await getDoc(doc(db, "profiles", data.clientId));
+            return {
+              ...data,
+              clientName: clientDoc.exists()
+                ? clientDoc.data().displayName
+                : data.clientId,
+            };
+          })
+        );
+        const upcoming = mapped.filter(
+          (b) =>
+            b.status === "accepted" &&
+            b.selectedTime &&
+            new Date(b.selectedTime) > new Date()
+        );
         setBookings(upcoming);
       } catch (err) {
         console.error("❌ Error fetching bookings:", err);
@@ -223,7 +233,7 @@ const ReaderDashboard = () => {
               return (
                 <li key={i} className="border-b pb-2 text-sm flex justify-between items-center">
                   <span>
-                    📅 {validDate.toLocaleString()} — Client ID: {b.clientId}
+                    📅 {validDate.toLocaleString()} — Client: {b.clientName}
                   </span>
                   <div className="flex items-center gap-3">
                     {joinable ? (

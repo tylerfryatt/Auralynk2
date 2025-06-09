@@ -27,10 +27,22 @@ const BookingPage = () => {
         where("status", "==", "pending")
       );
       const snapshot = await getDocs(q);
-      const allBookings = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
+      const allBookings = await Promise.all(
+        snapshot.docs.map(async (docSnap) => {
+          const data = { id: docSnap.id, ...docSnap.data() };
+          const clientDoc = await getDoc(doc(db, "profiles", data.clientId));
+          const readerDoc = await getDoc(doc(db, "profiles", data.readerId));
+          return {
+            ...data,
+            clientName: clientDoc.exists()
+              ? clientDoc.data().displayName
+              : data.clientId,
+            readerName: readerDoc.exists()
+              ? readerDoc.data().displayName
+              : data.readerId,
+          };
+        })
+      );
       setBookings(allBookings);
     } catch (err) {
       console.error("Failed to load bookings", err);
@@ -94,8 +106,8 @@ const BookingPage = () => {
           {bookings.map((booking) => (
             <li key={booking.id} className="border p-3 rounded shadow">
               <div>📅 {new Date(booking.selectedTime).toLocaleString()}</div>
-              <div>Client: {booking.clientId}</div>
-              <div>Reader: {booking.readerId}</div>
+              <div>Client: {booking.clientName}</div>
+              <div>Reader: {booking.readerName}</div>
               <div>Status: {booking.status}</div>
 
               <div className="mt-2 space-x-2">
@@ -128,7 +140,7 @@ const BookingPage = () => {
           <div className="modal">
             <p>
               Are you sure you want to book this appointment with client{' '}
-              {pendingAccept.clientId} at{' '}
+              {pendingAccept.clientName} at{' '}
               {new Date(pendingAccept.selectedTime).toLocaleString()}?
             </p>
             <div className="flex gap-4 justify-end">
