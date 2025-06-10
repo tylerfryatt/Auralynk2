@@ -30,7 +30,7 @@ const ReaderBookings = () => {
 
         const enrichedBookings = await Promise.all(
           bookingData.map(async (booking) => {
-            const clientDoc = await getDoc(doc(db, "users", booking.clientId));
+            const clientDoc = await getDoc(doc(db, "profiles", booking.clientId));
             return {
               ...booking,
               clientName: clientDoc.exists()
