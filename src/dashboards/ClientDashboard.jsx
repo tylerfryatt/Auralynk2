@@ -53,7 +53,8 @@ const ClientDashboard = () => {
       const profilesSnap = await getDocs(collection(db, "profiles"));
       const profileMap = {};
       profilesSnap.docs.forEach((d) => {
-        profileMap[d.id] = d.data();
+        const { availableSlots: _unused, ...rest } = d.data();
+        profileMap[d.id] = rest;
       });
 
       const now = new Date();
@@ -73,7 +74,7 @@ const ClientDashboard = () => {
 
           const slots = Array.from(new Set(cleaned));
 
-          return { ...u, availableSlots: slots, ...profileMap[u.id] };
+          return { ...u, ...profileMap[u.id], availableSlots: slots };
         })
       );
 
