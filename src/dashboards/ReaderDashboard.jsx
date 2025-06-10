@@ -114,7 +114,7 @@ const ReaderDashboard = () => {
         <h1 className="text-2xl font-bold">🌙 Reader Dashboard</h1>
         <div className="flex items-center gap-4">
           <a
-            href="/book"
+            href="/reader/bookings"
             className="text-sm text-indigo-600 hover:underline"
           >
             📋 Manage Bookings
