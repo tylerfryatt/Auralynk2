@@ -18,7 +18,7 @@ const ClientProfileForm = () => {
 
   useEffect(() => {
     const fetchProfile = async () => {
-      const docRef = doc(db, "profiles", uid);
+      const docRef = doc(db, "users", uid);
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
         setProfile(docSnap.data());
@@ -34,7 +34,7 @@ const ClientProfileForm = () => {
   };
 
   const saveField = async (field) => {
-    const docRef = doc(db, "profiles", uid);
+    const docRef = doc(db, "users", uid);
     await updateDoc(docRef, {
       [field]: profile[field],
       updatedAt: serverTimestamp(),
@@ -43,7 +43,7 @@ const ClientProfileForm = () => {
   };
 
   const handleInitialSave = async () => {
-    const docRef = doc(db, "profiles", uid);
+    const docRef = doc(db, "users", uid);
     await setDoc(docRef, {
       ...profile,
       role: "client",
