@@ -13,7 +13,6 @@ import {
   where,
   onSnapshot,
   Timestamp,
-  updateDoc,
 } from "firebase/firestore";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
@@ -41,28 +40,26 @@ const ClientDashboard = () => {
       if (snap.exists()) setProfile(snap.data());
     });
 
-    fetchReaders();
-    return () => unsubscribe();
+    const unsubReaders = subscribeReaders();
+    return () => {
+      unsubscribe();
+      unsubReaders();
+    };
   }, []);
 
-  const fetchReaders = async () => {
-    const [usersSnap, profilesSnap] = await Promise.all([
-      getDocs(collection(db, "users")),
-      getDocs(collection(db, "profiles")),
-    ]);
+  const subscribeReaders = () => {
+    const q = query(collection(db, "users"), where("role", "==", "reader"));
+    const unsub = onSnapshot(q, async (usersSnap) => {
+      const profilesSnap = await getDocs(collection(db, "profiles"));
+      const profileMap = {};
+      profilesSnap.docs.forEach((d) => {
+        profileMap[d.id] = d.data();
+      });
 
-    const profileMap = {};
-    profilesSnap.docs.forEach((d) => {
-      profileMap[d.id] = d.data();
-    });
-
-    const now = new Date();
-
-    const data = await Promise.all(
-      usersSnap.docs
-        .map((doc) => ({ id: doc.id, ...doc.data() }))
-        .filter((u) => u.role === "reader")
-        .map(async (u) => {
+      const now = new Date();
+      const data = await Promise.all(
+        usersSnap.docs.map(async (docSnap) => {
+          const u = { id: docSnap.id, ...docSnap.data() };
           const cleaned = (u.availableSlots || [])
             .map((s) => {
               if (s instanceof Timestamp) return s.toDate();
@@ -76,21 +73,14 @@ const ClientDashboard = () => {
 
           const slots = Array.from(new Set(cleaned));
 
-          if (u.availableSlots && slots.length !== u.availableSlots.length) {
-            try {
-              await updateDoc(doc(db, "users", u.id), {
-                availableSlots: slots,
-              });
-            } catch (err) {
-              console.error("Failed to update slots", err);
-            }
-          }
-
           return { ...u, availableSlots: slots, ...profileMap[u.id] };
         })
-    );
+      );
 
-    setReaders(data);
+      setReaders(data);
+    });
+
+    return unsub;
   };
 
   useEffect(() => {

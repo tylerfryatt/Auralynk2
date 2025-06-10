@@ -20,15 +20,12 @@ export default function AuthPage() {
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
-    console.log("🚀 Submitting login form...");
     e.preventDefault();
     try {
       let userCredential;
 
       if (isNewUser) {
-        console.log("🆕 Creating new user...");
         userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        console.log("✅ New user UID:", userCredential.user.uid);
 
         await setDoc(doc(db, "users", userCredential.user.uid), {
           email,
@@ -39,15 +36,12 @@ export default function AuthPage() {
         alert("Account created successfully!");
         navigate(`/${role}`);
       } else {
-        console.log("🔐 Signing in existing user...");
         const result = await signInWithEmailAndPassword(auth, email, password);
-        console.log("✅ Logged in UID:", result.user.uid);
 
         const userDocRef = doc(db, "users", result.user.uid);
         const userDoc = await getDoc(userDocRef);
         const userData = userDoc.data();
 
-        console.log("📄 Firestore user data:", userData);
 
         if (userData?.role) {
           alert("Login successful!");

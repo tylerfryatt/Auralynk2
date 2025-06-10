@@ -29,12 +29,10 @@ const ReaderDashboard = () => {
     let unsubPending = () => {};
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       if (!currentUser) {
-        console.log("👤 Not logged in, redirecting...");
         navigate("/login");
         return;
       }
 
-      console.log("✅ Logged in as:", currentUser.uid);
       setUser(currentUser);
 
       try {
@@ -43,7 +41,6 @@ const ReaderDashboard = () => {
 
         if (snap.exists()) {
           const data = snap.data();
-          console.log("✅ Profile data loaded:", data);
           setProfile(data);
           setFormData({
             displayName: data.displayName || "",
