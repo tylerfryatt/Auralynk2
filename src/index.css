@@ -5,3 +5,9 @@
 body {
   @apply min-h-screen bg-gradient-to-r from-indigo-900 via-purple-900 to-black text-gray-100 font-sans;
 }
+
+input,
+textarea,
+select {
+  @apply text-gray-900;
+}

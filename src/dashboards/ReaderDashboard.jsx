@@ -33,7 +33,7 @@ const ReaderDashboard = () => {
       setUser(currentUser);
 
       try {
-        const profileRef = doc(db, "profiles", currentUser.uid);
+        const profileRef = doc(db, "users", currentUser.uid);
         const snap = await getDoc(profileRef);
 
         if (snap.exists()) {
@@ -102,7 +102,7 @@ const ReaderDashboard = () => {
 
   const saveProfile = async () => {
     if (!user) return;
-    const profileRef = doc(db, "profiles", user.uid);
+    const profileRef = doc(db, "users", user.uid);
     await setDoc(profileRef, formData, { merge: true });
     setProfile(formData);
     setEditing(false);

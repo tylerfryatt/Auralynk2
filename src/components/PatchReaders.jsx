@@ -4,7 +4,7 @@ import { collection, getDocs, updateDoc, doc } from "firebase/firestore";
 
 const PatchReaders = () => {
   const handlePatch = async () => {
-    const snapshot = await getDocs(collection(db, "profiles"));
+    const snapshot = await getDocs(collection(db, "users"));
     const users = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
     console.log("📋 Users in Firestore:", users);
@@ -41,7 +41,7 @@ const PatchReaders = () => {
       if (Object.keys(updates).length > 0) {
         console.log(`🔧 Updating ${user.id} with:`, updates);
         try {
-          await updateDoc(doc(db, "profiles", user.id), updates);
+          await updateDoc(doc(db, "users", user.id), updates);
         } catch (err) {
           console.error(`❌ Failed to update ${user.id}:`, err);
         }
