@@ -27,7 +27,7 @@ const ClientDashboard = () => {
         return;
       }
       setUser(currentUser);
-      const profileRef = doc(db, "users", currentUser.uid);
+      const profileRef = doc(db, "profiles", currentUser.uid);
       const snap = await getDoc(profileRef);
       if (snap.exists()) setProfile(snap.data());
     });
@@ -37,7 +37,7 @@ const ClientDashboard = () => {
   }, []);
 
   const fetchReaders = async () => {
-    const snapshot = await getDocs(collection(db, "users"));
+    const snapshot = await getDocs(collection(db, "profiles"));
     const data = snapshot.docs
       .map((doc) => ({ id: doc.id, ...doc.data() }))
       .filter(
@@ -56,7 +56,7 @@ const ClientDashboard = () => {
 
   const saveProfile = async () => {
     if (!user) return;
-    const profileRef = doc(db, "users", user.uid);
+    const profileRef = doc(db, "profiles", user.uid);
     await setDoc(profileRef, profile, { merge: true });
     setEditing(false);
   };

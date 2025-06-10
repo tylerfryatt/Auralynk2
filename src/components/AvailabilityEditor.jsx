@@ -23,7 +23,7 @@ const AvailabilityEditor = () => {
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
       if (user) {
         setUser(user);
-        const docRef = doc(db, "users", user.uid);
+        const docRef = doc(db, "profiles", user.uid);
         const snap = await getDoc(docRef);
         if (snap.exists()) {
           const data = snap.data();
@@ -49,7 +49,7 @@ const AvailabilityEditor = () => {
     if (!selected || !user) return;
     const slotISO = selected.toISOString();
     if (availability.includes(slotISO)) return;
-    const docRef = doc(db, "users", user.uid);
+    const docRef = doc(db, "profiles", user.uid);
     await updateDoc(docRef, {
       availableSlots: arrayUnion(slotISO),
     });
@@ -59,7 +59,7 @@ const AvailabilityEditor = () => {
 
   const removeSlot = async (slot) => {
     if (!user) return;
-    const docRef = doc(db, "users", user.uid);
+    const docRef = doc(db, "profiles", user.uid);
     await updateDoc(docRef, {
       availableSlots: arrayRemove(slot),
     });
