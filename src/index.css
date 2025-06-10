@@ -8,6 +8,7 @@ body {
 
 input,
 textarea,
-select {
-  @apply text-gray-900;
+select,
+option {
+  @apply text-black;
 }
