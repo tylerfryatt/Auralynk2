@@ -22,7 +22,7 @@ const ClientDashboard = () => {
 
   useEffect(() => {
     const fetchReaders = async () => {
-      const querySnapshot = await getDocs(collection(db, "users"));
+      const querySnapshot = await getDocs(collection(db, "profiles"));
       const profiles = querySnapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
