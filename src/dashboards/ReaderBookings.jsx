@@ -28,7 +28,8 @@ const ReaderBookings = () => {
     if (!readerId) return;
     const q = query(
       collection(db, "bookings"),
-      where("readerId", "==", readerId)
+      where("readerId", "==", readerId),
+      where("status", "==", "pending")
     );
     const unsub = onSnapshot(q, async (snapshot) => {
       const bookingData = await Promise.all(
@@ -43,18 +44,13 @@ const ReaderBookings = () => {
           };
         })
       );
-      const pending = bookingData.filter((b) => b.status === "pending");
-      setBookings(pending);
+      setBookings(bookingData);
     });
     return () => unsub();
   }, [readerId]);
 
   const updateStatus = async (bookingId, status) => {
     await updateDoc(doc(db, "bookings", bookingId), { status });
-    if (status !== "pending") {
-      // remove locally so pending list updates instantly
-      setBookings((prev) => prev.filter((b) => b.id !== bookingId));
-    }
   };
 
   return (
