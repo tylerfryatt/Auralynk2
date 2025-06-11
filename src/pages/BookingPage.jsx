@@ -157,7 +157,7 @@ const BookingPage = () => {
             </p>
             <div className="flex gap-4 justify-end">
               <button
-                className="btn-secondary"
+                className="btn-primary"
                 onClick={async () => {
                   await updateStatus(pendingAccept.id, 'confirmed');
                   setPendingAccept(null);
@@ -166,7 +166,7 @@ const BookingPage = () => {
                 Yes
               </button>
               <button
-                className="btn-primary"
+                className="btn-secondary"
                 onClick={() => setPendingAccept(null)}
               >
                 No

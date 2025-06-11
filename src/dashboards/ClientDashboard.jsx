@@ -376,7 +376,7 @@ const ClientDashboard = () => {
                 Yes
               </button>
               <button
-                className="btn-gradient"
+                className="btn-secondary"
                 onClick={() => setPendingBooking(null)}
               >
                 No
@@ -392,7 +392,7 @@ const ClientDashboard = () => {
             <p>Are you sure you want to cancel this appointment?</p>
             <div className="flex gap-4 justify-end">
               <button
-                className="btn-secondary"
+                className="btn-primary"
                 onClick={() => {
                   cancelBooking(confirmId);
                   setConfirmId(null);
@@ -400,7 +400,7 @@ const ClientDashboard = () => {
               >
                 Yes
               </button>
-              <button className="btn-primary" onClick={() => setConfirmId(null)}>
+              <button className="btn-secondary" onClick={() => setConfirmId(null)}>
                 No
               </button>
             </div>
