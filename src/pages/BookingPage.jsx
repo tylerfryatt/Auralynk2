@@ -24,7 +24,8 @@ const BookingPage = () => {
     if (!uid) return () => {};
     const q = query(
       collection(db, "bookings"),
-      where("readerId", "==", uid)
+      where("readerId", "==", uid),
+      where("status", "==", "pending")
     );
     const unsub = onSnapshot(q, async (snapshot) => {
       const allBookings = await Promise.all(
@@ -43,8 +44,7 @@ const BookingPage = () => {
           };
         })
       );
-      const pending = allBookings.filter((b) => b.status === "pending");
-      setBookings(pending);
+      setBookings(allBookings);
     });
     return unsub;
   };
@@ -63,10 +63,6 @@ const BookingPage = () => {
         await updateDoc(bookingRef, { status });
       }
 
-      if (status !== "pending") {
-        // immediately remove from UI so it disappears without a page reload
-        setBookings((prev) => prev.filter((b) => b.id !== bookingId));
-      }
     } catch (err) {
       console.error("Failed to update booking", err);
     }

@@ -66,14 +66,12 @@ const ReaderDashboard = () => {
       try {
         const acceptedQuery = query(
           collection(db, "bookings"),
-          where("readerId", "==", currentUser.uid)
+          where("readerId", "==", currentUser.uid),
+          where("status", "==", "confirmed")
         );
         unsubAccepted = onSnapshot(acceptedQuery, async (snapshot) => {
-          const acceptedDocs = snapshot.docs.filter(
-            (d) => d.data().status === "confirmed"
-          );
           const mapped = await Promise.all(
-            acceptedDocs.map(async (docSnap) => {
+            snapshot.docs.map(async (docSnap) => {
               const data = { id: docSnap.id, ...docSnap.data() };
               const clientDoc = await getDoc(doc(db, "profiles", data.clientId));
               return {
@@ -96,11 +94,11 @@ const ReaderDashboard = () => {
 
         const pendingQuery = query(
           collection(db, "bookings"),
-          where("readerId", "==", currentUser.uid)
+          where("readerId", "==", currentUser.uid),
+          where("status", "==", "pending")
         );
         unsubPending = onSnapshot(pendingQuery, (snap) => {
-          const pending = snap.docs.filter((d) => d.data().status === "pending");
-          setPendingCount(pending.length);
+          setPendingCount(snap.docs.length);
         });
       } catch (err) {
         console.error("❌ Error fetching bookings:", err);
