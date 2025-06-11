@@ -51,6 +51,10 @@ const ReaderBookings = () => {
 
   const updateStatus = async (bookingId, status) => {
     await updateDoc(doc(db, "bookings", bookingId), { status });
+    if (status !== "pending") {
+      // remove locally so pending list updates instantly
+      setBookings((prev) => prev.filter((b) => b.id !== bookingId));
+    }
   };
 
   return (
@@ -76,7 +80,9 @@ const ReaderBookings = () => {
               {b.status === "pending" && (
                 <div className="mt-4 sm:mt-0 flex gap-2">
                   <button
-                    onClick={() => updateStatus(b.id, "confirmed")}
+                    onClick={async () => {
+                      await updateStatus(b.id, "confirmed");
+                    }}
                     className="bg-green-600 text-white px-4 py-1 rounded hover:bg-green-700"
                   >
                     Accept
