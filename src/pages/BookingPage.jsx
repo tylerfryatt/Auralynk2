@@ -128,7 +128,9 @@ const BookingPage = () => {
                   Accept
                 </button>
                 <button
-                  onClick={() => updateStatus(booking.id, "rejected")}
+                  onClick={async () => {
+                    await updateStatus(booking.id, "rejected");
+                  }}
                   className="bg-yellow-500 text-white px-2 py-1 rounded text-sm"
                 >
                   Reject

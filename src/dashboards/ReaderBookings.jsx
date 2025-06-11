@@ -88,7 +88,9 @@ const ReaderBookings = () => {
                     Accept
                   </button>
                   <button
-                    onClick={() => updateStatus(b.id, "rejected")}
+                    onClick={async () => {
+                      await updateStatus(b.id, "rejected");
+                    }}
                     className="bg-red-500 text-white px-4 py-1 rounded hover:bg-red-600"
                   >
                     Reject
