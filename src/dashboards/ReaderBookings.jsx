@@ -76,7 +76,7 @@ const ReaderBookings = () => {
               {b.status === "pending" && (
                 <div className="mt-4 sm:mt-0 flex gap-2">
                   <button
-                    onClick={() => updateStatus(b.id, "accepted")}
+                    onClick={() => updateStatus(b.id, "confirmed")}
                     className="bg-green-600 text-white px-4 py-1 rounded hover:bg-green-700"
                   >
                     Accept

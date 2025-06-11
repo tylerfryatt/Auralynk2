@@ -70,7 +70,7 @@ const ReaderDashboard = () => {
         );
         unsubAccepted = onSnapshot(acceptedQuery, async (snapshot) => {
           const acceptedDocs = snapshot.docs.filter(
-            (d) => d.data().status === "accepted"
+            (d) => d.data().status === "confirmed"
           );
           const mapped = await Promise.all(
             acceptedDocs.map(async (docSnap) => {

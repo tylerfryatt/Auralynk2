@@ -96,7 +96,7 @@ const ClientDashboard = () => {
   useEffect(() => {
     const q = query(
       collection(db, "bookings"),
-      where("status", "==", "accepted")
+      where("status", "==", "confirmed")
     );
     const unsub = onSnapshot(q, (snap) => {
       const booked = {};
@@ -119,7 +119,7 @@ const ClientDashboard = () => {
     if (!user) return;
     const q = query(collection(db, "bookings"), where("clientId", "==", user.uid));
     const unsubscribe = onSnapshot(q, async (snap) => {
-      const accepted = snap.docs.filter((d) => d.data().status === "accepted");
+      const accepted = snap.docs.filter((d) => d.data().status === "confirmed");
       const mapped = await Promise.all(
         accepted.map(async (d) => {
           const data = { id: d.id, ...d.data() };

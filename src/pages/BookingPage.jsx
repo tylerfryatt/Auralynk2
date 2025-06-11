@@ -52,7 +52,7 @@ const BookingPage = () => {
   const updateStatus = async (bookingId, status) => {
     try {
       const bookingRef = doc(db, "bookings", bookingId);
-      if (status === "accepted") {
+      if (status === "confirmed") {
         const res = await fetch("http://localhost:4000/create-room", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -157,7 +157,7 @@ const BookingPage = () => {
               <button
                 className="btn-secondary"
                 onClick={() => {
-                  updateStatus(pendingAccept.id, 'accepted');
+                  updateStatus(pendingAccept.id, 'confirmed');
                   setPendingAccept(null);
                 }}
               >
