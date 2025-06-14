@@ -214,7 +214,7 @@ const ReaderDashboard = () => {
 
                 {joinable ? (
                   <a
-                    href={`/session/${b.id}`}
+                    href={`/session/${b.token || b.id}`}
                     className="text-blue-500 hover:underline"
                   >
                     🔗 Join Video Session
