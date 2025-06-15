@@ -6,9 +6,6 @@ import {
   doc,
   updateDoc,
   deleteDoc,
-  setDoc,
-  serverTimestamp,
-  Timestamp,
 } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
 
@@ -25,23 +22,9 @@ const BookingPage = () => {
     setBookings(allBookings);
   };
 
-  const generateToken = () => Math.random().toString(36).substring(2, 10);
-
   const updateStatus = async (bookingId, status) => {
     const bookingRef = doc(db, "bookings", bookingId);
     await updateDoc(bookingRef, { status });
-
-    if (status === "accepted") {
-      const token = generateToken();
-      const now = Date.now();
-      await updateDoc(bookingRef, { token });
-      await setDoc(doc(db, "bookingTokens", token), {
-        bookingId,
-        createdAt: serverTimestamp(),
-        expiresAt: Timestamp.fromDate(new Date(now + 30 * 60 * 1000)),
-      });
-    }
-
     fetchBookings();
   };
 

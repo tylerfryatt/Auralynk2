@@ -1,11 +1,9 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import ClientDashboard from "./dashboards/ClientDashboard";
 import ReaderDashboard from "./dashboards/ReaderDashboard";
 import BookingPage from "./pages/BookingPage";
 import SessionPage from "./pages/SessionPage";
-import ConfirmPage from "./pages/ConfirmPage";
-import ReaderProfile from "./pages/ReaderProfile";
-import NotFound from "./pages/NotFound";
 import AuthPage from "./AuthPage"; // ✅ this is your original login
 import HomePage from "./pages/HomePage"; // optional homepage
 
@@ -15,13 +13,10 @@ const App = () => {
       <Routes>
         <Route path="/" element={<HomePage />} />           {/* Optional homepage */}
         <Route path="/login" element={<AuthPage />} />      {/* 🔐 Your login page */}
+        <Route path="/client" element={<ClientDashboard />} />
         <Route path="/reader" element={<ReaderDashboard />} />
-        <Route path="/manage-bookings/*" element={<BookingPage />} />
-        <Route path="/readers/:readerId" element={<ReaderProfile />} />
-        <Route path="/confirm/:token" element={<ConfirmPage />} />
-        <Route path="/session/:token" element={<SessionPage />} />
-        {/* Catch-all route for unmatched paths */}
-        <Route path="*" element={<NotFound />} />
+        <Route path="/book" element={<BookingPage />} />
+        <Route path="/session/:bookingId" element={<SessionPage />} />
       </Routes>
     </Router>
   );

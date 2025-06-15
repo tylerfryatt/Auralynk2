@@ -39,33 +39,6 @@ app.post("/create-room", async (req, res) => {
   }
 });
 
-app.post("/fresh-token", async (req, res) => {
-  try {
-    const { roomName } = req.body;
-    const response = await axios.post(
-      "https://api.daily.co/v1/meeting-tokens",
-      {
-        properties: {
-          room_name: roomName,
-          is_owner: false,
-          exp: Math.floor(Date.now() / 1000) + 60 * 60, // 1 hour
-        },
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${DAILY_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-      }
-    );
-
-    res.status(200).json({ token: response.data.token });
-  } catch (err) {
-    console.error("Failed to create Daily token:", err.message);
-    res.status(500).json({ error: "Token creation failed" });
-  }
-});
-
 const PORT = 4000;
 app.listen(PORT, () => {
   console.log(`✅ Daily API server running at http://localhost:${PORT}`);

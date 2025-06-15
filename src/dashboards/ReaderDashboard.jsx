@@ -114,7 +114,7 @@ const ReaderDashboard = () => {
         <h1 className="text-2xl font-bold">🌙 Reader Dashboard</h1>
         <div className="flex items-center gap-4">
           <a
-            href="/manage-bookings"
+            href="/book"
             className="text-sm text-indigo-600 hover:underline"
           >
             📋 Manage Bookings
@@ -204,7 +204,7 @@ const ReaderDashboard = () => {
           {bookings.map((b, i) => {
             const validDate = b.selectedTime ? new Date(b.selectedTime) : null;
             if (!validDate || isNaN(validDate)) return null;
-            const joinable = b.token && b.roomUrl && isSessionJoinable(b.selectedTime);
+            const joinable = b.roomUrl && isSessionJoinable(b.selectedTime);
 
             return (
               <li key={i} className="border-b pb-2 text-sm">
@@ -214,7 +214,7 @@ const ReaderDashboard = () => {
 
                 {joinable ? (
                   <a
-                    href={`/session/${b.token}`}
+                    href={`/session/${b.id}`}
                     className="text-blue-500 hover:underline"
                   >
                     🔗 Join Video Session

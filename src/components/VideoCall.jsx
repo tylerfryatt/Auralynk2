@@ -1,11 +1,11 @@
 import React, { useEffect, useRef } from "react";
 import DailyIframe from "@daily-co/daily-js";
 
-const VideoCall = ({ roomUrl, token }) => {
+const VideoCall = ({ roomUrl }) => {
   const callFrame = useRef(null);
 
   useEffect(() => {
-    if (roomUrl && token && !callFrame.current) {
+    if (roomUrl && !callFrame.current) {
       callFrame.current = DailyIframe.createFrame({
         showLeaveButton: true,
         iframeStyle: {
@@ -16,10 +16,10 @@ const VideoCall = ({ roomUrl, token }) => {
           borderRadius: "12px",
         },
       });
-      callFrame.current.join({ url: roomUrl, token });
+      callFrame.current.join({ url: roomUrl });
       document.getElementById("video-root").appendChild(callFrame.current.iframe);
     }
-  }, [roomUrl, token]);
+  }, [roomUrl]);
 
   return <div id="video-root" />;
 };
