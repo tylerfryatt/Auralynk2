@@ -204,7 +204,7 @@ const ReaderDashboard = () => {
           {bookings.map((b, i) => {
             const validDate = b.selectedTime ? new Date(b.selectedTime) : null;
             if (!validDate || isNaN(validDate)) return null;
-            const joinable = b.roomUrl && isSessionJoinable(b.selectedTime);
+            const joinable = b.token && b.roomUrl && isSessionJoinable(b.selectedTime);
 
             return (
               <li key={i} className="border-b pb-2 text-sm">
@@ -214,7 +214,7 @@ const ReaderDashboard = () => {
 
                 {joinable ? (
                   <a
-                    href={`/session/${b.token || b.id}`}
+                    href={`/session/${b.token}`}
                     className="text-blue-500 hover:underline"
                   >
                     🔗 Join Video Session
