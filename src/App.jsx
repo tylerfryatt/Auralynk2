@@ -20,6 +20,7 @@ const App = () => {
         <Route path="/readers/:readerId" element={<ReaderProfile />} />
         <Route path="/confirm/:token" element={<ConfirmPage />} />
         <Route path="/session/:token" element={<SessionPage />} />
+        {/* Catch-all route for unmatched paths */}
         <Route path="*" element={<NotFound />} />
       </Routes>
     </Router>
